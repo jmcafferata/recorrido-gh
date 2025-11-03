@@ -1,0 +1,76 @@
+{
+  "stages": [
+    {
+      "id": "r1",
+      "photo": "/game-assets/recorrido/recorrido01.jpg",
+      "model": "/game-assets/recorrido/escena01.glb",
+      "transition": "/game-assets/recorrido/transicion01.mp4",
+      "zocalo": "/game-assets/recorrido/zocalos/escena01_zocalo_espinal.webm",
+      "forward": {
+        "yaw": -185.01,
+        "pitch": -6.78
+      },
+      "audio": "/game-assets/recorrido/sonido/Monte la paloma parte 1.mp3"
+    },
+    {
+      "id": "r2",
+      "photo": "/game-assets/recorrido/recorrido02.jpg",
+      "model": "/game-assets/recorrido/escena02.glb",
+      "transition": "/game-assets/recorrido/transicion02.mp4",
+      "zocalo": "/game-assets/recorrido/zocalos/escena02_zocalo_monte.webm",
+      "forward": {
+        "yaw": 364.46,
+        "pitch": -4.22
+      },
+      "audio": "/game-assets/recorrido/sonido/Monte la paloma parte 2.mp3"
+    },
+    {
+      "id": "r3",
+      "photo": "/game-assets/recorrido/recorrido03.jpg",
+      "model": "/game-assets/recorrido/escena03.glb",
+      "transition": "/game-assets/recorrido/transicion02.mp4",
+      "zocalo": "/game-assets/recorrido/zocalos/escena03_zocalo_bosque en galeria.webm",
+      "forward": {
+        "yaw": 326.27,
+        "pitch": 0
+      },
+      "audio": "/game-assets/recorrido/sonido/Monte la paloma parte 3.mp3"
+    },
+    {
+      "id": "r4",
+      "photo": "/game-assets/recorrido/recorrido04.jpg",
+      "model": "/game-assets/recorrido/escena04.glb",
+      "transition": "/game-assets/recorrido/transicion02.mp4",
+      "zocalo": "/game-assets/recorrido/zocalos/escena04_zocalo_bosque de barrancas.webm",
+      "forward": {
+        "yaw": 29.73,
+        "pitch": 0
+      },
+      "audio": "/game-assets/recorrido/sonido/Monte la paloma parte 4.mp3"
+    },
+    {
+      "id": "r5",
+      "photo": "/game-assets/recorrido/recorrido05.jpg",
+      "model": "/game-assets/recorrido/escena05.glb",
+      "transition": "/game-assets/recorrido/transicion02.mp4",
+      "zocalo": "/game-assets/recorrido/zocalos/escena05_zocalo_humedal.webm",
+      "forward": {
+        "yaw": 337.73,
+        "pitch": -1.79
+      },
+      "audio": "/game-assets/recorrido/sonido/Monte la paloma parte 5.mp3"
+    },
+    {
+      "id": "r6",
+      "photo": "/game-assets/recorrido/recorrido06.jpg",
+      "model": "/game-assets/recorrido/escena06.glb",
+      "transition": "/game-assets/recorrido/transicion02.mp4",
+      "zocalo": "/game-assets/recorrido/zocalos/escena06_zocalo_costa.webm",
+      "forward": {
+        "yaw": 9.13,
+        "pitch": 0
+      },
+      "audio": "/game-assets/recorrido/sonido/Monte la paloma parte 6.mp3"
+    }
+  ]
+}

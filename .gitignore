@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-new/
+packaged/
+portable-dist/
+portable-dist-unsigned/
+portable-dist-dir/
+dist-unpacked-unsigned/
+dist-unpacked-debug/
+dist-unpacked-debug-2/
+dist-final/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
