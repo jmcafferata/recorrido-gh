@@ -4,6 +4,8 @@ import { SceneManager } from './core/SceneManager.js';
 import { EventBus } from './core/EventBus.js';
 import { State } from './core/State.js';
 import { UI } from './core/UI.js';
+import { PreloaderUI } from './core/PreloaderUI.js';
+import { AssetPreloader } from './core/AssetPreloader.js';
 
 
 import { MenuScene } from './scenes/MenuScene.js';
@@ -205,16 +207,64 @@ showPauseMenu();
 });
 
 
-// Start
-app.start();
-router.boot(); // reads current hash and triggers first scene
-
-// 🎬 Ir a menu principal si no hay hash especificado
-if (!location.hash || location.hash === '#') {
-  location.hash = '#menu';
+// Initialize preloader and asset loading
+async function initializeApp() {
+  console.log('🚀 Iniciando carga de assets...');
+  
+  // Crear y mostrar preloader
+  const preloaderUI = new PreloaderUI();
+  const assetPreloader = new AssetPreloader();
+  
+  const allAssets = assetPreloader.getAllAssets();
+  preloaderUI.setTotalAssets(allAssets.length);
+  
+  console.log(`📦 Precargando ${allAssets.length} assets...`);
+  
+  try {
+    // Precargar todos los assets
+    await assetPreloader.preloadAll((loadedCount, currentFile) => {
+      preloaderUI.updateProgress(loadedCount, currentFile);
+      console.log(`📁 Cargado: ${currentFile} (${loadedCount}/${allAssets.length})`);
+    });
+    
+    console.log('✅ Todos los assets cargados exitosamente');
+    
+    // Esperar un momento para mostrar "100%" antes de ocultar
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Ocultar preloader
+    await preloaderUI.hide();
+    
+    // Hacer el preloader globalmente accesible para que las escenas puedan usar assets precargados
+    window.assetPreloader = assetPreloader;
+    
+    console.log('🎮 Aplicación lista para usar');
+    
+  } catch (error) {
+    console.error('❌ Error durante la precarga:', error);
+    await preloaderUI.hide();
+  }
 }
 
-EventBus.on('scene:changed', updateContinueAvailability);
+// Initialize everything
+async function startApp() {
+  // Start asset preloading
+  await initializeApp();
+  
+  // Start the application after assets are loaded
+  app.start();
+  router.boot(); // reads current hash and triggers first scene
+
+  // 🎬 Ir a menu principal si no hay hash especificado
+  if (!location.hash || location.hash === '#') {
+    location.hash = '#menu';
+  }
+
+  EventBus.on('scene:changed', updateContinueAvailability);
+}
+
+// Start the application
+startApp();
 
 
 // 🔄 Global functions for resetting game progress
