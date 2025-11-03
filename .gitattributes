@@ -1,7 +1,13 @@
+# Video files
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.webm filter=lfs diff=lfs merge=lfs -text
 *.mpeg filter=lfs diff=lfs merge=lfs -text
+
+# Audio files
 *.mp3 filter=lfs diff=lfs merge=lfs -text
 *.m4a filter=lfs diff=lfs merge=lfs -text
+# 3D model files
 *.glb filter=lfs diff=lfs merge=lfs -text
 *.fbx filter=lfs diff=lfs merge=lfs -text
+# Large image files (over ~10MB typically)
+*.zip filter=lfs diff=lfs merge=lfs -text
