@@ -209,7 +209,7 @@ showPauseMenu();
 
 // Initialize preloader and asset loading
 async function initializeApp() {
-  console.log('🚀 Iniciando carga de assets...');
+  console.log('🚀 Iniciando precarga de assets a caché...');
   
   // Crear y mostrar preloader
   const preloaderUI = new PreloaderUI();
@@ -218,16 +218,16 @@ async function initializeApp() {
   const allAssets = assetPreloader.getAllAssets();
   preloaderUI.setTotalAssets(allAssets.length);
   
-  console.log(`📦 Precargando ${allAssets.length} assets...`);
+  console.log(`📦 Precacheando ${allAssets.length} assets (solo a caché HTTP)...`);
   
   try {
-    // Precargar todos los assets
+    // Precargar todos los assets SOLO a caché del navegador
     await assetPreloader.preloadAll((loadedCount, currentFile) => {
       preloaderUI.updateProgress(loadedCount, currentFile);
-      console.log(`📁 Cargado: ${currentFile} (${loadedCount}/${allAssets.length})`);
+      console.log(`📁 Cacheado: ${currentFile} (${loadedCount}/${allAssets.length})`);
     });
     
-    console.log('✅ Todos los assets cargados exitosamente');
+    console.log('✅ Assets cacheados exitosamente (sin usar RAM)');
     
     // Esperar un momento para mostrar "100%" antes de ocultar
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -235,10 +235,7 @@ async function initializeApp() {
     // Ocultar preloader
     await preloaderUI.hide();
     
-    // Hacer el preloader globalmente accesible para que las escenas puedan usar assets precargados
-    window.assetPreloader = assetPreloader;
-    
-    console.log('🎮 Aplicación lista para usar');
+    console.log('🎮 Aplicación lista - assets en caché HTTP del navegador');
     
   } catch (error) {
     console.error('❌ Error durante la precarga:', error);

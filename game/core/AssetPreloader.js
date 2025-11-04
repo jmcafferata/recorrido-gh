@@ -106,8 +106,8 @@ export class AssetPreloader {
             ]
         };
 
-        this.loadedAssets = new Map();
-        this.loadingPromises = new Map();
+        // Solo guardamos URLs precargadas, no los assets en memoria
+        this.precachedUrls = new Set();
     }
 
     getAllAssets() {
@@ -127,8 +127,9 @@ export class AssetPreloader {
 
         const loadPromises = allAssets.map(async (assetPath) => {
             try {
-                const asset = await this.loadAsset(assetPath);
-                this.loadedAssets.set(assetPath, asset);
+                // Solo descargar a caché, no mantener en memoria
+                await this.precacheAsset(assetPath);
+                this.precachedUrls.add(assetPath);
                 loadedCount++;
                 
                 if (onProgress) {
@@ -136,136 +137,45 @@ export class AssetPreloader {
                     onProgress(loadedCount, fileName);
                 }
                 
-                return asset;
             } catch (error) {
-                console.warn(`Failed to load asset: ${assetPath}`, error);
+                console.warn(`Failed to precache asset: ${assetPath}`, error);
                 loadedCount++;
                 
                 if (onProgress) {
                     const fileName = assetPath.split('/').pop();
                     onProgress(loadedCount, `Error: ${fileName}`);
                 }
-                
-                return null;
             }
         });
 
         await Promise.allSettled(loadPromises);
-        return this.loadedAssets;
+        console.log(`✅ ${this.precachedUrls.size} assets precached successfully`);
+        return this.precachedUrls;
     }
 
-    async loadAsset(assetPath) {
-        // Si ya está cargado, devolverlo
-        if (this.loadedAssets.has(assetPath)) {
-            return this.loadedAssets.get(assetPath);
-        }
-
-        // Si ya está cargándose, esperar la promesa existente
-        if (this.loadingPromises.has(assetPath)) {
-            return this.loadingPromises.get(assetPath);
-        }
-
-        // Determinar el tipo de asset y cargar
-        const extension = assetPath.split('.').pop().toLowerCase();
-        let loadPromise;
-
-        switch (extension) {
-            case 'glb':
-            case 'gltf':
-                loadPromise = AssetLoader.gltf(assetPath);
-                break;
-            
-            case 'webm':
-            case 'mp4':
-                loadPromise = this.loadVideo(assetPath);
-                break;
-            
-            case 'mp3':
-            case 'm4a':
-            case 'wav':
-                loadPromise = this.loadAudio(assetPath);
-                break;
-            
-            case 'png':
-            case 'jpg':
-            case 'jpeg':
-                loadPromise = AssetLoader.texture(assetPath);
-                break;
-            
-            default:
-                throw new Error(`Unsupported asset type: ${extension}`);
-        }
-
-        this.loadingPromises.set(assetPath, loadPromise);
+    async precacheAsset(assetPath) {
+        // Usar fetch para descargar a caché HTTP del navegador sin mantener en memoria
+        const response = await fetch(assetPath, { 
+            method: 'GET',
+            cache: 'force-cache' // Forzar uso de caché
+        });
         
-        try {
-            const asset = await loadPromise;
-            this.loadedAssets.set(assetPath, asset);
-            this.loadingPromises.delete(assetPath);
-            return asset;
-        } catch (error) {
-            this.loadingPromises.delete(assetPath);
-            throw error;
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        // Consumir el response para completar la descarga, pero no guardarlo
+        await response.blob();
+        
+        // El asset ahora está en caché HTTP del navegador
+        return true;
     }
 
-    loadVideo(url) {
-        return new Promise((resolve, reject) => {
-            const video = document.createElement('video');
-            video.preload = 'auto';
-            video.muted = true; // Para evitar problemas de autoplay
-            
-            const handleLoad = () => {
-                video.removeEventListener('canplaythrough', handleLoad);
-                video.removeEventListener('error', handleError);
-                resolve(video);
-            };
-            
-            const handleError = () => {
-                video.removeEventListener('canplaythrough', handleLoad);
-                video.removeEventListener('error', handleError);
-                reject(new Error(`Failed to load video: ${url}`));
-            };
-            
-            video.addEventListener('canplaythrough', handleLoad);
-            video.addEventListener('error', handleError);
-            video.src = url;
-        });
-    }
-
-    loadAudio(url) {
-        return new Promise((resolve, reject) => {
-            const audio = new Audio();
-            audio.preload = 'auto';
-            
-            const handleLoad = () => {
-                audio.removeEventListener('canplaythrough', handleLoad);
-                audio.removeEventListener('error', handleError);
-                resolve(audio);
-            };
-            
-            const handleError = () => {
-                audio.removeEventListener('canplaythrough', handleLoad);
-                audio.removeEventListener('error', handleError);
-                reject(new Error(`Failed to load audio: ${url}`));
-            };
-            
-            audio.addEventListener('canplaythrough', handleLoad);
-            audio.addEventListener('error', handleError);
-            audio.src = url;
-        });
-    }
-
-    getAsset(assetPath) {
-        return this.loadedAssets.get(assetPath);
-    }
-
-    isLoaded(assetPath) {
-        return this.loadedAssets.has(assetPath);
+    isPrecached(assetPath) {
+        return this.precachedUrls.has(assetPath);
     }
 
     clearCache() {
-        this.loadedAssets.clear();
-        this.loadingPromises.clear();
+        this.precachedUrls.clear();
     }
 }
