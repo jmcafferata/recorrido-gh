@@ -271,24 +271,6 @@ export class CursorRadarModule {
     }
   }
 
-  hideCursor() {
-    if (this.cursorEl) {
-      this.cursorEl.style.display = 'none';
-    }
-    if (this.cursorDot) {
-      this.cursorDot.style.display = 'none';
-    }
-  }
-
-  showCursor() {
-    if (this.cursorEl) {
-      this.cursorEl.style.display = 'block';
-    }
-    if (this.cursorDot) {
-      this.cursorDot.style.display = 'block';
-    }
-  }
-
   destroy() {
     if (this._onMouseMove) {
       document.removeEventListener('mousemove', this._onMouseMove);

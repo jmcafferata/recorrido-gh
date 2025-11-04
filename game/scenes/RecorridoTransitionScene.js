@@ -19,6 +19,16 @@ export class RecorridoTransitionScene extends BaseScene {
   }
 
   async mount() {
+    // 👇 Limpiar cualquier overlay del menú que haya quedado abierto
+    const menuOverlays = document.querySelectorAll('body > div');
+    menuOverlays.forEach(overlay => {
+      const zIndex = window.getComputedStyle(overlay).zIndex;
+      if (zIndex === '10000') {
+        console.log('[RecorridoTransitionScene] Removing leftover menu overlay');
+        overlay.remove();
+      }
+    });
+
     // Cargar fuente de TypeKit
     if (!document.getElementById('efedra-transition-font')) {
       const link = document.createElement('link');

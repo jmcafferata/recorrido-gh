@@ -1400,6 +1400,8 @@ export class LabScene extends BaseScene{
           this.labMenuMusic = null;
         }
         menuContainer.remove();
+        // Ocultar overlay
+        overlay.style.display = 'none';
         resolve();
       });
 
@@ -1412,6 +1414,8 @@ export class LabScene extends BaseScene{
           this.labMenuMusic = null;
         }
         menuContainer.remove();
+        // Ocultar overlay antes de cambiar de escena
+        overlay.style.display = 'none';
         resolve();
         location.hash = '#recorrido-transition';
       });

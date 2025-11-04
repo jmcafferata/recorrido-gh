@@ -243,6 +243,16 @@ export class RecorridoScene extends BaseScene {
 
 
   async mount() {
+    // 👇 Limpiar cualquier overlay del menú que haya quedado abierto
+    const menuOverlays = document.querySelectorAll('body > div');
+    menuOverlays.forEach(overlay => {
+      const zIndex = window.getComputedStyle(overlay).zIndex;
+      if (zIndex === '10000') {
+        console.log('[RecorridoScene] Removing leftover menu overlay');
+        overlay.remove();
+      }
+    });
+
     // 👇 Ocultar el videoOverlay al inicio para evitar que bloquee clicks/cámara
     UI.hideVideo();
     console.log('[RecorridoScene] Video overlay hidden on mount');

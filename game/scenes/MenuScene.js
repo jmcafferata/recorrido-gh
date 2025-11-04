@@ -421,6 +421,16 @@ export class MenuScene extends BaseScene {
     // Restaurar canvas
     this.app.canvas.style.display = '';
     document.body.style.cursor = 'auto';
+    
+    // Limpiar cualquier overlay del menú que pueda haber quedado
+    const overlays = document.querySelectorAll('body > div');
+    overlays.forEach(overlay => {
+      // Solo eliminar overlays con z-index 10000 que son del menú
+      const zIndex = window.getComputedStyle(overlay).zIndex;
+      if (zIndex === '10000') {
+        overlay.remove();
+      }
+    });
   }
 
   update(dt) {
