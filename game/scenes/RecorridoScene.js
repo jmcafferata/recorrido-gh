@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BaseScene } from '../core/BaseScene.js';
 import { AssetLoader } from '../core/AssetLoader.js';
 import { State } from '../core/State.js';
+import { UI } from '../core/UI.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Lensflare, LensflareElement } from 'three/addons/objects/Lensflare.js';
 import { SpeciesManager } from '../core/SpeciesManager.js';
@@ -242,6 +243,10 @@ export class RecorridoScene extends BaseScene {
 
 
   async mount() {
+    // 👇 Ocultar el videoOverlay al inicio para evitar que bloquee clicks/cámara
+    UI.hideVideo();
+    console.log('[RecorridoScene] Video overlay hidden on mount');
+
     // 👇 Hide system cursor immediately
     document.documentElement.style.cursor = 'none';
     document.body.style.cursor = 'none';
@@ -301,41 +306,8 @@ export class RecorridoScene extends BaseScene {
 
     window.verRonda = () => {
       const progress = this.speciesManager.getProgress();
-      console.log('═══════════════════════════════════════════════════');
-      console.log('📊 ESTADO ACTUAL');
-      console.log('═══════════════════════════════════════════════════');
-      console.log(`  📍 Ronda: ${progress.round} (${this.speciesManager.getRoundLetter()})`);
-      console.log(`  🏠 Ambiente: ${progress.stage}`);
-      console.log(`  📈 Progreso ronda: ${progress.roundProgress}`);
-      console.log(`  📈 Progreso total: ${progress.overallProgress}`);
-      console.log('═══════════════════════════════════════════════════');
-      console.log('💡 Usa setRonda(ronda, ambiente) para cambiar');
-      console.log('   Ejemplo: setRonda(1, 4) para Ronda 1, Ambiente 4');
-      console.log('═══════════════════════════════════════════════════');
     };
 
-    console.log('═══════════════════════════════════════════════════');
-    console.log('🎮 COMANDOS DE CONSOLA DISPONIBLES:');
-    console.log('═══════════════════════════════════════════════════');
-    console.log('  setRonda(ronda, ambiente) - Cambiar a una ronda/ambiente específico');
-    console.log('    Ejemplo: setRonda(1, 4)');
-    console.log('  verRonda() - Ver ronda y ambiente actual');
-    console.log('');
-    console.log('🎨 CONTROLES GAMER LUT:');
-    console.log('  toggleGamerLUT() - Activar/desactivar efecto visual');
-    console.log('  setLUTIntensity(0.0-1.0) - Ajustar intensidad del efecto');
-    console.log('  lutPresetCyberpunk() - Preset colores vibrantes magenta/cyan');
-    console.log('  lutPresetCompetitive() - Preset clarity y contraste alto');
-    console.log('  lutPresetCinematic() - Preset dramático con viñeta');
-    console.log('  lutReset() - Volver a valores por defecto');
-    console.log('');
-    console.log('⌨️  ATAJOS DE TECLADO:');
-    console.log('  1-6: Cambiar ambiente (dentro de ronda actual)');
-    console.log('  Q/W/E/R/T: Cambiar ronda (Q=1, W=2, E=3, R=4, T=5)');
-    console.log('  I: Ver info de ronda/ambiente actual');
-    console.log('  L: Toggle Gamer LUT (efectos visuales)');
-    console.log('  ESPACIO: Zoom');
-    console.log('═══════════════════════════════════════════════════');
 
     // Cargar config JSON
     const conf = await fetch('./data/recorrido.json', { cache: 'no-store' }).then(r => r.json());
@@ -924,6 +896,7 @@ export class RecorridoScene extends BaseScene {
 
 
   async unmount() {
+    console.log('[RecorridoScene] Starting unmount...');
     // 👇 Ocultar elementos específicos de RecorridoScene (inventoryCanvas y zócalo)
     const inventoryCanvas = document.getElementById('inventoryCanvas');
     const zocaloVideo = document.getElementById('zocaloVideo');
@@ -933,6 +906,18 @@ export class RecorridoScene extends BaseScene {
       zocaloVideo.style.opacity = '0';
       zocaloVideo.pause();
       zocaloVideo.src = '';
+    }
+
+    // Ocultar video overlay si está visible
+    const videoOverlay = document.getElementById('videoOverlay');
+    if (videoOverlay) {
+      videoOverlay.style.display = 'none';
+      // Pausar el video si está reproduciéndose
+      const labVideo = document.getElementById('labVideo');
+      if (labVideo) {
+        labVideo.pause();
+        labVideo.currentTime = 0;
+      }
     }
 
     // Ocultar overlays de recorrido (mapa y metadata)
@@ -1008,6 +993,15 @@ export class RecorridoScene extends BaseScene {
       this.currentVideoTexture = null;
     }
 
+    // 👇 OPTIMIZACIÓN: Limpiar caché de shaders flash
+    if (this._flashShaderCache) {
+      this._flashShaderCache.forEach(shader => {
+        try { shader.dispose(); } catch {}
+      });
+      this._flashShaderCache.clear();
+      this._flashShaderCache = null;
+    }
+
     if (this.stageModel) {
       this.stageModel.traverse((child) => {
         if (child.isMesh) {
@@ -1037,6 +1031,7 @@ export class RecorridoScene extends BaseScene {
       this.preloadedDataVideo.src = '';
       this.preloadedDataVideo = null;
     }
+    console.log('[RecorridoScene] Unmount completed');
   }
 
   async loadStage(i, options = {}) {
@@ -1754,34 +1749,60 @@ export class RecorridoScene extends BaseScene {
         this.speciesAudio.loop = true;
         this.speciesAudio.crossOrigin = 'anonymous';
         
+        // 👇 Manejar error de carga del audio (404, formato inválido, etc) - SILENCIOSO
+        this.speciesAudio.addEventListener('error', (e) => {
+          // Limpiar nodos Web Audio si fueron creados
+          if (this.audioSource) {
+            try { this.audioSource.disconnect(); } catch {}
+            this.audioSource = null;
+          }
+          if (this.stereoPanner) {
+            try { this.stereoPanner.disconnect(); } catch {}
+            this.stereoPanner = null;
+          }
+          if (this.gainNode) {
+            try { this.gainNode.disconnect(); } catch {}
+            this.gainNode = null;
+          }
+          this.speciesAudio = null;
+          // No mostrar error - es normal que algunas especies no tengan audio espacial
+        }, { once: true });
+        
         // Create Web Audio API context and nodes for stereo panning
         if (!this.audioContext) {
           this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        // Create audio nodes
-        this.audioSource = this.audioContext.createMediaElementSource(this.speciesAudio);
-        this.stereoPanner = this.audioContext.createStereoPanner();
-        this.gainNode = this.audioContext.createGain();
-        
-        // Connect: source -> panner -> gain -> destination
-        this.audioSource.connect(this.stereoPanner);
-        this.stereoPanner.connect(this.gainNode);
-        this.gainNode.connect(this.audioContext.destination);
-        
-        // Start with volume at 0 (will be updated when in view)
-        this.gainNode.gain.value = 0;
-        this.stereoPanner.pan.value = 0;
-        
-        // Try to play the audio, but don't fail if the file doesn't exist
-        this.speciesAudio.play().catch((err) => {
-          console.log(`⚠️ No se pudo cargar audio espacial para ${this.currentSpecies.commonName}: ${audioPath}`);
-          this.speciesAudio = null;
-        });
-        
-        if (this.speciesAudio) {
-          console.log(`🔊 Audio espacial cargado para ${this.currentSpecies.commonName}: ${audioPath}`);
-        }
+        // 👇 Solo crear nodos si el audio se carga exitosamente
+        this.speciesAudio.addEventListener('canplaythrough', () => {
+          if (!this.speciesAudio) return; // Ya fue limpiado por error
+          
+          try {
+            // Create audio nodes
+            this.audioSource = this.audioContext.createMediaElementSource(this.speciesAudio);
+            this.stereoPanner = this.audioContext.createStereoPanner();
+            this.gainNode = this.audioContext.createGain();
+            
+            // Connect: source -> panner -> gain -> destination
+            this.audioSource.connect(this.stereoPanner);
+            this.stereoPanner.connect(this.gainNode);
+            this.gainNode.connect(this.audioContext.destination);
+            
+            // Start with volume at 0 (will be updated when in view)
+            this.gainNode.gain.value = 0;
+            this.stereoPanner.pan.value = 0;
+            
+            console.log(`🔊 Audio espacial cargado para ${this.currentSpecies.commonName}: ${audioPath}`);
+            
+            // Try to play the audio
+            this.speciesAudio.play().catch((err) => {
+              // Silencioso - es normal que el autoplay esté bloqueado
+            });
+          } catch (err) {
+            console.warn(`Error configurando Web Audio API (se ignorará):`, err.message);
+            this.speciesAudio = null;
+          }
+        }, { once: true });
       } else {
         console.log(`🔇 Audio espacial omitido (especie ya descubierta): ${this.currentSpecies.commonName}`);
       }
@@ -1791,30 +1812,46 @@ export class RecorridoScene extends BaseScene {
     if (this.currentSpecies?.assets?.dataVideo) {
       // Limpiar video anterior si existe
       if (this.preloadedDataVideo) {
-        this.preloadedDataVideo.pause();
-        this.preloadedDataVideo.src = '';
+        try {
+          this.preloadedDataVideo.pause();
+          this.preloadedDataVideo.src = '';
+        } catch (e) {
+          console.warn('Error limpiando video precargado:', e);
+        }
         this.preloadedDataVideo = null;
       }
       
-      // Crear nuevo video y precargarlo
-      this.preloadedDataVideo = document.createElement('video');
-      this.preloadedDataVideo.src = this.currentSpecies.assets.dataVideo;
-      this.preloadedDataVideo.muted = true; // Muted para permitir precarga sin interacción del usuario
-      this.preloadedDataVideo.preload = 'auto';
-      this.preloadedDataVideo.playsInline = true;
-      
-      console.log('📺 Precargando video de data:', this.currentSpecies.assets.dataVideo);
-      
-      // Esperar a que se carguen los metadatos
-      this.preloadedDataVideo.addEventListener('loadedmetadata', () => {
-        console.log('✅ Video de data precargado exitosamente (duración:', this.preloadedDataVideo.duration, 's)');
-      }, { once: true });
-      
-      // Manejar errores de carga
-      this.preloadedDataVideo.addEventListener('error', (e) => {
-        console.error('❌ Error al precargar video de data:', e);
+      // Crear nuevo video y precargarlo (modo silencioso - no bloquear si falla)
+      try {
+        this.preloadedDataVideo = document.createElement('video');
+        this.preloadedDataVideo.src = this.currentSpecies.assets.dataVideo;
+        this.preloadedDataVideo.muted = true; // Muted para permitir precarga sin interacción del usuario
+        this.preloadedDataVideo.preload = 'metadata'; // Cambiar a 'metadata' en lugar de 'auto' para cargar menos datos
+        this.preloadedDataVideo.playsInline = true;
+        
+        console.log('📺 Precargando video de data:', this.currentSpecies.assets.dataVideo);
+        
+        // Esperar a que se carguen los metadatos
+        this.preloadedDataVideo.addEventListener('loadedmetadata', () => {
+          // 👇 Verificar que el video sigue siendo válido antes de acceder a duration
+          if (this.preloadedDataVideo && this.preloadedDataVideo.duration) {
+            console.log('✅ Video de data precargado exitosamente (duración:', this.preloadedDataVideo.duration, 's)');
+          }
+        }, { once: true });
+        
+        // Manejar errores de carga - NO BLOQUEAR la funcionalidad
+        this.preloadedDataVideo.addEventListener('error', (e) => {
+          console.warn('⚠️ No se pudo precargar video de data (se cargará bajo demanda):', this.currentSpecies.assets.dataVideo);
+          // 👇 Limpiar referencias pero NO lanzar error
+          if (this.preloadedDataVideo) {
+            this.preloadedDataVideo.src = '';
+            this.preloadedDataVideo = null;
+          }
+        }, { once: true });
+      } catch (e) {
+        console.warn('⚠️ Error creando elemento de precarga de video (se ignorará):', e);
         this.preloadedDataVideo = null;
-      }, { once: true });
+      }
     }
 
     // �🔍 LOG: Resumen de carga completada
@@ -1838,10 +1875,28 @@ export class RecorridoScene extends BaseScene {
     const rect = this.app.canvas.getBoundingClientRect();
     this.mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouseNDC.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+
+    // 👇 Detectar si el mouse está sobre el glitch para cambiar color del cursor
+    if (this.glitchObject && this.cursorRadar && this.cursorRadar.cursorEl) {
+      this.raycaster.setFromCamera(this.mouseNDC, this.camera);
+      const hits = this.raycaster.intersectObject(this.glitchObject, true);
+      
+      if (hits.length > 0) {
+        // Mouse sobre el glitch - cursor verde
+        this.cursorRadar.cursorEl.style.filter = 'sepia(1) saturate(5) hue-rotate(70deg) brightness(1.2)';
+      } else {
+        // Mouse fuera del glitch - cursor normal
+        this.cursorRadar.cursorEl.style.filter = 'none';
+      }
+    }
   }
 
   onKeyDown(e) {
-    if (e.code === 'Space' && !this.zoom.isZooming) {
+    // 👇 Bloquear SPACE si el data overlay está visible
+    const videoOverlay = document.getElementById('videoOverlay');
+    const isOverlayVisible = videoOverlay && videoOverlay.style.display === 'block';
+    
+    if (e.code === 'Space' && !this.zoom.isZooming && !isOverlayVisible) {
       e.preventDefault();
       this.zoom.isZooming = true;
     }
@@ -1887,7 +1942,11 @@ export class RecorridoScene extends BaseScene {
   }
 
   onKeyUp(e) {
-    if (e.code === 'Space' && this.zoom.isZooming) {
+    // 👇 Bloquear SPACE si el data overlay está visible
+    const videoOverlay = document.getElementById('videoOverlay');
+    const isOverlayVisible = videoOverlay && videoOverlay.style.display === 'block';
+    
+    if (e.code === 'Space' && this.zoom.isZooming && !isOverlayVisible) {
       e.preventDefault();
       this.zoom.isZooming = false;
     }
@@ -1960,7 +2019,11 @@ export class RecorridoScene extends BaseScene {
     }
 
     // Check ALL rastro objects (especies ya descubiertas) - SOLO punto exacto de clic
-    if (this.stageModel) {
+    // 👇 BLOQUEAR clicks en rastros hasta que se descubra el glitch de la escena actual
+    const currentSpeciesDiscovered = this.currentSpecies?.id ? 
+      this.speciesManager.isSpeciesFound(this.currentSpecies.id) : true;
+    
+    if (this.stageModel && currentSpeciesDiscovered) {
       let bestRastroHit = null;
       let bestRastroMesh = null;
       let clickedSpeciesData = null;
@@ -2042,6 +2105,8 @@ export class RecorridoScene extends BaseScene {
         
         return;
       }
+    } else if (this.stageModel && !currentSpeciesDiscovered) {
+      console.log('🔒 Clicks en rastros bloqueados hasta descubrir la especie actual:', this.currentSpecies?.commonName);
     }
 
     // Then check glitch object (test all points in hitbox)
@@ -2051,7 +2116,6 @@ export class RecorridoScene extends BaseScene {
     }
     
     let bestHit = null;
-    let foundNonTransparent = false;
     
     // Test all points in the hitbox area
     for (const testNDC of testPoints) {
@@ -2060,14 +2124,10 @@ export class RecorridoScene extends BaseScene {
       
       if (hits.length > 0) {
         const hit = hits[0];
-        const isTransparent = this.isPixelTransparent(hit);
         
-        // Keep the closest non-transparent hit
-        if (!isTransparent) {
-          if (!bestHit || hit.distance < bestHit.distance) {
-            bestHit = hit;
-            foundNonTransparent = true;
-          }
+        // Keep the closest hit
+        if (!bestHit || hit.distance < bestHit.distance) {
+          bestHit = hit;
         }
       }
     }
@@ -2076,7 +2136,7 @@ export class RecorridoScene extends BaseScene {
       tieneGlitchObject: !!this.glitchObject,
       glitchVisible: this.glitchObject?.visible,
       hitboxTestPoints: testPoints.length,
-      encontradoNoTransparente: foundNonTransparent,
+      encontradoHit: !!bestHit,
       especieActual: this.currentSpecies?.commonName || 'ninguna'
     });
 
@@ -2090,41 +2150,45 @@ export class RecorridoScene extends BaseScene {
           this.speciesClickDisabled = false;
         }, 3000);
         
-        // Play radar animation at click position
+        // Play radar animation at click position (lightweight)
         if (this.cursorRadar) {
           this.cursorRadar.playRadarAt(e.clientX, e.clientY);
         }
 
-        // LOG: Especie descubierta
-        console.log('═══════════════════════════════════════════════════');
-        console.log('🎉 ESPECIE DESCUBIERTA!');
-        console.log('═══════════════════════════════════════════════════');
+        // 👇 LOG simplificado (menos líneas = menos carga)
         if (this.currentSpecies) {
-          console.log('🐾 Especie:', this.currentSpecies.commonName);
-          console.log('🔬 Nombre científico:', this.currentSpecies.scientificName);
-          console.log('🆔 ID:', this.currentSpecies.id);
-          console.log('📊 Progreso actual:', this.speciesManager.getProgress());
+          console.log('🎉 Especie descubierta:', this.currentSpecies.commonName, '|', this.speciesManager.getProgress());
         }
-        console.log('═══════════════════════════════════════════════════');
 
-        // Flash glitch rápido (0.5s)
-        this.triggerGlitchFlash();
-        // Glitcheo general, sutil (1.5s)
-        this.triggerGlobalGlitch(1500);
-        this.startGlitchWhiteFlash();
+        // 👇 OPTIMIZACIÓN: Ejecutar efectos visuales de forma escalonada para evitar lag
+        // Primero: efectos rápidos y ligeros
+        this.triggerGlitchFlash(); // Solo DOM + CSS (0.5s)
         
-        // 👇 Mark species as found and update panel
+        // Segundo: marcar especie (no visual, sin lag)
         if (this.currentSpecies) {
           this.speciesManager.markSpeciesFound(this.currentSpecies.id);
-          // Update panel to next version (A1 → A2 → A3, etc.)
-          if (this.inventoryImg) {
-            this.inventoryImg.src = this.speciesManager.getPanelPath();
-          }
-          console.log('[RecorridoScene] Species found:', this.currentSpecies.commonName, this.speciesManager.getProgress());
+          // Update panel usando requestAnimationFrame para no bloquear
+          requestAnimationFrame(() => {
+            if (this.inventoryImg) {
+              this.inventoryImg.src = this.speciesManager.getPanelPath();
+            }
+          });
         }
-
-        // Play the data overlay video
-        this.playDataOverlayVideo();
+        
+        // Tercero: efectos pesados con delay mínimo para permitir que el primer frame se renderice
+        requestAnimationFrame(() => {
+          this.triggerGlobalGlitch(1500); // DOM + CSS
+          
+          // Cuarto: video overlay (lo más pesado) con un frame extra de delay
+          requestAnimationFrame(() => {
+            this.playDataOverlayVideo();
+            
+            // Quinto: white flash (shader intensivo) después del video para no competir
+            setTimeout(() => {
+              this.startGlitchWhiteFlash();
+            }, 50);
+          });
+        });
     }
   }
 
@@ -2950,31 +3014,28 @@ export class RecorridoScene extends BaseScene {
       return;
     }
 
-    // play sonido/metadata_popup.mp3
-    if (this.metadataOverlayAudio) {
-      this.metadataOverlayAudio.pause();
+    // 👇 OPTIMIZACIÓN: Reutilizar audio en lugar de crear nuevo cada vez
+    if (!this.metadataOverlayAudio) {
+      this.metadataOverlayAudio = new Audio('/game-assets/recorrido/sonido/metadata_popup.mp3');
+      this.metadataOverlayAudio.volume = 0.4;
+    } else {
       this.metadataOverlayAudio.currentTime = 0;
     }
-
-    this.metadataOverlayAudio = new Audio('/game-assets/recorrido/sonido/metadata_popup.mp3');
-    this.metadataOverlayAudio.volume = 0.4;
     this.metadataOverlayAudio.play().catch(e => console.error("Audio play failed:", e));
 
     import('../core/UI.js').then(({ UI }) => {
       const videoEl = document.getElementById('labVideo');
       const videoOverlay = document.getElementById('videoOverlay');
       
-      // 👇 Use preloaded video if available, otherwise load normally
-      if (this.preloadedDataVideo) {
-        console.log('📺 Usando video precargado para overlay');
-        // Transfer preloaded video to the UI element
+      // 👇 OPTIMIZACIÓN: Usar directamente el video precargado sin crear nuevo src
+      if (this.preloadedDataVideo && this.preloadedDataVideo.readyState >= 2) {
+        // Si el video precargado está listo, transferir su src (ya está en cache del browser)
         videoEl.src = this.preloadedDataVideo.src;
-        // Copy over the preloaded state to avoid re-downloading
-        if (this.preloadedDataVideo.readyState >= 2) {
-          console.log('✅ Video ya está listo (readyState:', this.preloadedDataVideo.readyState, ')');
-        }
+      } else if (this.preloadedDataVideo) {
+        // Video existe pero no está listo, usar de todas formas
+        videoEl.src = this.preloadedDataVideo.src;
       } else {
-        console.warn('⚠️ Video no precargado, cargando ahora...');
+        // Fallback: cargar ahora (no debería pasar si la precarga funciona)
         videoEl.src = this.currentSpecies.assets.dataVideo;
       }
       
@@ -2990,7 +3051,32 @@ export class RecorridoScene extends BaseScene {
         videoEl.play().catch(e => console.error("Video loop failed:", e));
       };
       
-      videoEl.play().catch(e => console.error("Video play failed:", e));
+      // 👇 Esperar a que el video esté completamente listo antes de reproducir
+      const tryPlayVideo = () => {
+        if (videoEl.readyState >= 3) { // HAVE_FUTURE_DATA or higher
+          videoEl.play().catch(e => {
+            console.error("Video autoplay failed:", e);
+            // Si falla el autoplay, intentar de nuevo en un frame
+            requestAnimationFrame(() => {
+              videoEl.play().catch(err => {
+                console.error("Video play retry failed:", err);
+                // Como último recurso, mostrar controles para que el usuario pueda reproducir manualmente
+                videoEl.controls = true;
+              });
+            });
+          });
+        } else {
+          // Video no está listo, esperar un poco más
+          setTimeout(tryPlayVideo, 100);
+        }
+      };
+      
+      // Intentar reproducir inmediatamente o esperar a que esté listo
+      if (videoEl.readyState >= 3) {
+        tryPlayVideo();
+      } else {
+        videoEl.addEventListener('canplay', tryPlayVideo, { once: true });
+      }
       
       // 👆 Click handler para cerrar overlay al hacer click en área transparente
       const handleOverlayClick = (e) => {
@@ -3297,59 +3383,63 @@ export class RecorridoScene extends BaseScene {
   // Crea un overlay DOM con un flash "glitch" de hasta 0.5s usando la paleta dada
   triggerGlitchFlash() {
     try {
-      // Limpieza si hubiera uno previo
+      // 👇 OPTIMIZACIÓN: Reutilizar elementos existentes en lugar de crear nuevos
       if (this._glitchFlashEl) {
-        this._glitchFlashEl.remove();
-        this._glitchFlashStyle?.remove?.();
-        this._glitchFlashEl = null;
-        this._glitchFlashStyle = null;
+        // Si ya existe, solo reiniciar animación
+        this._glitchFlashEl.style.animation = 'none';
+        // Force reflow para reiniciar animación
+        void this._glitchFlashEl.offsetWidth;
+        this._glitchFlashEl.style.animation = 'dg-glitch-flash-move 0.5s ease-out forwards';
+        return;
       }
 
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes dg-glitch-flash-move {
-          0%   { opacity: 0; transform: translate3d(0,0,0) skewX(0deg); filter: contrast(100%) saturate(100%); background-position: 0% 0%; }
-          10%  { opacity: 1; transform: translate3d(-2px,1px,0) skewX(2deg); background-position: 100% 0%; }
-          25%  { transform: translate3d(2px,-1px,0) skewX(-2deg); }
-          45%  { background-position: 0% 100%; }
-          70%  { transform: translate3d(-1px,0,0) skewX(1deg); filter: contrast(120%) saturate(120%); }
-          100% { opacity: 0; transform: translate3d(0,0,0) skewX(0deg); background-position: 100% 100%; }
-        }
-      `;
-      document.head.appendChild(style);
+      // 👇 Crear style solo una vez y dejarlo en el DOM (es lightweight)
+      if (!this._glitchFlashStyle) {
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes dg-glitch-flash-move {
+            0%   { opacity: 0; transform: translate3d(0,0,0) skewX(0deg); background-position: 0% 0%; }
+            10%  { opacity: 1; transform: translate3d(-2px,1px,0) skewX(2deg); background-position: 100% 0%; }
+            25%  { transform: translate3d(2px,-1px,0) skewX(-2deg); }
+            45%  { background-position: 0% 100%; }
+            70%  { transform: translate3d(-1px,0,0) skewX(1deg); }
+            100% { opacity: 0; transform: translate3d(0,0,0) skewX(0deg); background-position: 100% 100%; }
+          }
+        `;
+        document.head.appendChild(style);
+        this._glitchFlashStyle = style;
+      }
 
       const el = document.createElement('div');
-      el.style.position = 'fixed';
-      el.style.top = '0';
-      el.style.left = '0';
-      el.style.width = '100vw';
-      el.style.height = '100vh';
-      el.style.pointerEvents = 'none';
-      // Por encima del video DOM para asegurar visibilidad instantánea
-      el.style.zIndex = '10000';
-      el.style.opacity = '0';
-      // Paleta solicitada como franjas + grilla fina
-      el.style.backgroundImage = [
-        // Franjas horizontales con la paleta
-        'repeating-linear-gradient( to bottom, #D9DC77 0%, #D9DC77 8%, #DBB28D 8%, #DBB28D 16%, #E4CF9D 16%, #E4CF9D 24%, #1F1F1F 24%, #1F1F1F 32%, #314B56 32%, #314B56 40%, #171930 40%, #171930 48%, #D9DC77 48%, #D9DC77 56% )',
-        // Rejilla sutil para textura
-        'repeating-linear-gradient( to right, rgba(255,255,255,0.06) 0 2px, transparent 2px 4px )'
-      ].join(',');
-      el.style.backgroundBlendMode = 'overlay, normal';
-      el.style.backgroundSize = '200% 200%, auto';
-      el.style.animation = 'dg-glitch-flash-move 0.5s ease-out forwards';
+      // 👇 Usar cssText para asignación en bloque (más rápido que propiedades individuales)
+      el.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 10000;
+        opacity: 0;
+        background-image: repeating-linear-gradient(to bottom, #D9DC77 0%, #D9DC77 8%, #DBB28D 8%, #DBB28D 16%, #E4CF9D 16%, #E4CF9D 24%, #1F1F1F 24%, #1F1F1F 32%, #314B56 32%, #314B56 40%, #171930 40%, #171930 48%, #D9DC77 48%, #D9DC77 56%),
+                          repeating-linear-gradient(to right, rgba(255,255,255,0.06) 0 2px, transparent 2px 4px);
+        background-blend-mode: overlay, normal;
+        background-size: 200% 200%, auto;
+        animation: dg-glitch-flash-move 0.5s ease-out forwards;
+        will-change: transform, opacity;
+      `;
 
       document.body.appendChild(el);
-
       this._glitchFlashEl = el;
-      this._glitchFlashStyle = style;
 
-      // Remover al finalizar
+      // 👇 Limpiar después de animación pero mantener el style en DOM
       setTimeout(() => {
-        try { el.remove(); } catch {}
-        try { style.remove(); } catch {}
-        if (this._glitchFlashEl === el) this._glitchFlashEl = null;
-        if (this._glitchFlashStyle === style) this._glitchFlashStyle = null;
+        try { 
+          if (this._glitchFlashEl === el) {
+            el.remove();
+            this._glitchFlashEl = null;
+          }
+        } catch {}
       }, 500);
     } catch {}
   }
@@ -3395,279 +3485,145 @@ export class RecorridoScene extends BaseScene {
   // Glitch general sutil: cambios de color/brillo (1.5s por defecto)
   triggerGlobalGlitch(duration = 1500) {
     try {
-      // Limpiar si había uno previo
+      // 👇 OPTIMIZACIÓN: Reutilizar elementos y evitar recrear el DOM
       if (this._globalGlitchEl) {
-        try { this._globalGlitchEl.remove(); } catch {}
-        this._globalGlitchEl = null;
+        // Si ya existe un efecto activo, extender su duración en lugar de recrear
+        return;
       }
-      if (this._globalGlitchStyle) {
-        try { this._globalGlitchStyle.remove(); } catch {}
-        this._globalGlitchStyle = null;
+
+      // 👇 Crear style solo una vez y reutilizarlo
+      if (!this._globalGlitchStyle) {
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes dg-global-glitch-filter {
+            0%   { filter: none; }
+            10%  { filter: brightness(1.08) contrast(1.06) saturate(1.04) hue-rotate(6deg); }
+            25%  { filter: brightness(0.94) contrast(1.05) saturate(0.98) hue-rotate(-6deg); }
+            40%  { filter: brightness(1.03) contrast(1.08) saturate(1.02) hue-rotate(3deg); }
+            60%  { filter: brightness(0.96) contrast(1.04) saturate(0.97) hue-rotate(-3deg); }
+            80%  { filter: brightness(1.05) contrast(1.06) saturate(1.00) hue-rotate(2deg); }
+            100% { filter: none; }
+          }
+          .dg-global-glitch-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.09;
+            mix-blend-mode: overlay;
+            background-image: repeating-linear-gradient(to bottom, #D9DC77 0 3px, #DBB28D 3px 6px, #E4CF9D 6px 9px, #1F1F1F 9px 12px, #314B56 12px 15px, #171930 15px 18px),
+                              repeating-linear-gradient(to right, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px);
+            background-size: 200% 200%, auto;
+            will-change: background-position;
+          }
+        `;
+        document.head.appendChild(style);
+        this._globalGlitchStyle = style;
       }
-      document.body.classList.remove('dg-global-glitch-active');
 
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes dg-global-glitch-filter {
-          0%   { filter: none; }
-          10%  { filter: brightness(1.08) contrast(1.06) saturate(1.04) hue-rotate(6deg); }
-          25%  { filter: brightness(0.94) contrast(1.05) saturate(0.98) hue-rotate(-6deg); }
-          40%  { filter: brightness(1.03) contrast(1.08) saturate(1.02) hue-rotate(3deg); }
-          60%  { filter: brightness(0.96) contrast(1.04) saturate(0.97) hue-rotate(-3deg); }
-          80%  { filter: brightness(1.05) contrast(1.06) saturate(1.00) hue-rotate(2deg); }
-          100% { filter: none; }
-        }
-        body.dg-global-glitch-active { animation: dg-global-glitch-filter ${duration}ms ease-in-out; }
-      `;
-      document.head.appendChild(style);
-
-      // Overlay de textura muy sutil con la paleta para dar cohesión al efecto
+      // 👇 Crear overlay con clase en lugar de inline styles (más eficiente)
       const ov = document.createElement('div');
-      ov.style.position = 'fixed';
-      ov.style.top = '0';
-      ov.style.left = '0';
-      ov.style.width = '100vw';
-      ov.style.height = '100vh';
-      ov.style.pointerEvents = 'none';
-      ov.style.zIndex = '9999'; // debajo del flash (10000), encima del resto
-      ov.style.opacity = '0.09';
-      ov.style.mixBlendMode = 'overlay';
-      ov.style.backgroundImage = [
-        'repeating-linear-gradient( to bottom, #D9DC77 0 3px, #DBB28D 3px 6px, #E4CF9D 6px 9px, #1F1F1F 9px 12px, #314B56 12px 15px, #171930 15px 18px )',
-        'repeating-linear-gradient( to right, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px )'
-      ].join(',');
-      ov.style.backgroundSize = '200% 200%, auto';
+      ov.className = 'dg-global-glitch-overlay';
 
-      // Animación sutil de desplazamiento de fondo
+      // 👇 Usar Web Animations API directamente (más eficiente que CSS animations para efectos únicos)
+      document.body.appendChild(ov);
+      document.body.style.animation = `dg-global-glitch-filter ${duration}ms ease-in-out`;
+
+      // Animación de fondo
       ov.animate(
         [ { backgroundPosition: '0% 0%, 0 0' }, { backgroundPosition: '100% 100%, 20px 0' } ],
         { duration, easing: 'ease-in-out' }
       );
 
-      document.body.appendChild(ov);
-      document.body.classList.add('dg-global-glitch-active');
-
       this._globalGlitchEl = ov;
-      this._globalGlitchStyle = style;
 
       setTimeout(() => {
-        try { ov.remove(); } catch {}
-        try { style.remove(); } catch {}
-        document.body.classList.remove('dg-global-glitch-active');
-        if (this._globalGlitchEl === ov) this._globalGlitchEl = null;
-        if (this._globalGlitchStyle === style) this._globalGlitchStyle = null;
+        try { 
+          if (this._globalGlitchEl === ov) {
+            ov.remove();
+            this._globalGlitchEl = null;
+          }
+          document.body.style.animation = '';
+        } catch {}
       }, duration);
     } catch {}
   }
 
   startGlitchWhiteFlash() {
-    if (this.glitchFlashState?.promise) {
-      return this.glitchFlashState.promise;
-    }
-
     if (!this.glitchObject) {
       this.completeGlitchReveal();
       return Promise.resolve();
     }
 
-    if (this.videoElement) {
-      try { this.videoElement.pause(); } catch {}
-    }
-
-    const targets = [];
-    let hasValidTarget = false;
-
+    console.log('✨ Iniciando flash blanco en glitch (alpha flash usando shader)');
+    
+    const flashTargets = [];
+    
+    // Buscar todos los meshes del glitch object y crear shader materials
     this.glitchObject.traverse((child) => {
-      if (!child.isMesh) return;
-
+      if (!child.isMesh || !child.material) return;
+      
       const originalMaterial = child.material;
-      const originalMaterials = Array.isArray(originalMaterial)
-        ? originalMaterial
-        : [originalMaterial];
-
-      let meshHasValidMaterials = true;
-
-      const flashMaterials = originalMaterials.map((mat) => {
-        if (!mat) {
-          meshHasValidMaterials = false;
-          return null;
-        }
-
-        const alphaSource = mat.map || mat.alphaMap || this.currentVideoTexture;
-        if (!alphaSource) {
-          meshHasValidMaterials = false;
-          return null;
-        }
-
-        if (alphaSource.matrixAutoUpdate) {
-          alphaSource.updateMatrix();
-        }
-
-        const shaderMat = new THREE.ShaderMaterial({
-          transparent: true,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-          uniforms: {
-            uOpacity: { value: 0 },
-            uAlphaMap: { value: alphaSource },
-            uAlphaMapMatrix: { value: alphaSource.matrix ? alphaSource.matrix.clone() : new THREE.Matrix3() }
-          },
-          vertexShader: `
-            varying vec2 vUv;
-            void main() {
-              vUv = uv;
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `,
-          fragmentShader: `
-            uniform sampler2D uAlphaMap;
-            uniform float uOpacity;
-            uniform mat3 uAlphaMapMatrix;
-            varying vec2 vUv;
-
-            void main() {
-              vec3 transformed = uAlphaMapMatrix * vec3(vUv, 1.0);
-              vec4 tex = texture2D(uAlphaMap, transformed.xy);
-              float alpha = tex.a * uOpacity;
-              if (alpha <= 0.0) discard;
-              gl_FragColor = vec4(vec3(1.0), alpha);
-            }
-          `
-        });
-
-        shaderMat.userData.alphaSource = alphaSource;
-
-        return shaderMat;
+      const alphaSource = originalMaterial.map || this.currentVideoTexture;
+      
+      if (!alphaSource) return;
+      
+      // Crear shader material blanco que respeta el alpha
+      const flashMaterial = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        uniforms: {
+          uAlphaMap: { value: alphaSource }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D uAlphaMap;
+          varying vec2 vUv;
+          void main() {
+            vec4 tex = texture2D(uAlphaMap, vUv);
+            float alpha = tex.a;
+            if (alpha <= 0.0) discard;
+            gl_FragColor = vec4(1.0, 1.0, 1.0, alpha); // Blanco con el alpha del texture
+          }
+        `
       });
-
-      if (!meshHasValidMaterials || flashMaterials.some(mat => !mat)) {
-        flashMaterials.forEach(mat => mat?.dispose?.());
-        return;
-      }
-
-      const replacement = Array.isArray(originalMaterial)
-        ? flashMaterials
-        : flashMaterials[0];
-
-      child.material = replacement;
-
-      targets.push({
-        mesh: child,
-        originalMaterial,
-        flashMaterials
-      });
-
-      hasValidTarget = true;
+      
+      // Aplicar material flash
+      child.material = flashMaterial;
+      flashTargets.push({ child, originalMaterial, flashMaterial });
     });
 
-    if (!hasValidTarget) {
+    // Restaurar materiales originales después de 100ms
+    setTimeout(() => {
+      flashTargets.forEach(({ child, originalMaterial, flashMaterial }) => {
+        child.material = originalMaterial;
+        flashMaterial.dispose(); // Limpiar shader
+      });
+      console.log('✨ Flash blanco en glitch completado');
+      
+      // Completar reveal después del flash
       this.completeGlitchReveal();
-      return Promise.resolve();
-    }
+    }, 100);
 
-    const rise = 140;
-    const hold = 70;
-    const fall = 220;
-    const total = rise + hold + fall;
-
-    this.glitchObject.visible = true;
-    const originalRenderOrder = this.glitchObject.renderOrder ?? 0;
-    this.glitchObject.renderOrder = originalRenderOrder + 1;
-
-    let resolveFn;
-    const promise = new Promise((resolve) => { resolveFn = resolve; });
-
-    this.glitchFlashState = {
-      mesh: this.glitchObject,
-      targets,
-      start: performance.now(),
-      rise,
-      hold,
-      fall,
-      total,
-      resolve: resolveFn,
-      promise,
-      originalRenderOrder
-    };
-
-    return promise;
+    return Promise.resolve();
   }
 
   updateGlitchFlash() {
-    if (!this.glitchFlashState) {
-      return;
-    }
-
-    const state = this.glitchFlashState;
-    const now = performance.now();
-    const elapsed = now - state.start;
-
-    if (elapsed >= state.total) {
-      this.finalizeGlitchFlash(state);
-      return;
-    }
-
-    let opacity = 0;
-    if (elapsed <= state.rise) {
-      const t = elapsed / state.rise;
-      opacity = this.easeOutCubic(Math.min(Math.max(t, 0), 1));
-    } else if (elapsed <= state.rise + state.hold) {
-      opacity = 1;
-    } else {
-      const t = (elapsed - state.rise - state.hold) / state.fall;
-      opacity = 1 - this.easeInCubic(Math.min(Math.max(t, 0), 1));
-    }
-
-    state.targets.forEach((target) => {
-      target.flashMaterials.forEach((mat) => {
-        if (!mat || !mat.uniforms?.uOpacity) return;
-        const alphaSource = mat.userData?.alphaSource;
-        if (alphaSource?.matrixAutoUpdate) {
-          alphaSource.updateMatrix();
-          if (alphaSource.matrix && mat.uniforms.uAlphaMapMatrix?.value instanceof THREE.Matrix3) {
-            mat.uniforms.uAlphaMapMatrix.value.copy(alphaSource.matrix);
-          }
-        }
-        mat.uniforms.uOpacity.value = opacity;
-      });
-    });
+    // Ya no es necesario - el flash ahora es instantáneo como en los rastros
   }
 
   finalizeGlitchFlash(state) {
-    state.targets.forEach((target) => {
-      if (!target) return;
-
-      target.flashMaterials.forEach((mat) => {
-        try { mat.dispose(); } catch {}
-      });
-
-      const originalMaterial = target.originalMaterial;
-      if (Array.isArray(originalMaterial)) {
-        target.mesh.material = originalMaterial;
-      } else {
-        target.mesh.material = originalMaterial;
-      }
-
-      if (target.mesh.material) {
-        if (Array.isArray(target.mesh.material)) {
-          target.mesh.material.forEach((mat) => mat && (mat.needsUpdate = true));
-        } else {
-          target.mesh.material.needsUpdate = true;
-        }
-      }
-    });
-
-    if (state.mesh) {
-      state.mesh.renderOrder = state.originalRenderOrder ?? state.mesh.renderOrder;
-    }
-
-    this.completeGlitchReveal();
-
-    if (state.resolve) {
-      state.resolve();
-    }
-
-    this.glitchFlashState = null;
+    // Ya no es necesario - el flash ahora es instantáneo como en los rastros
   }
 
   completeGlitchReveal() {
@@ -4132,6 +4088,10 @@ export class RecorridoScene extends BaseScene {
       const handleSecondBarridaEnd = async () => {
         console.log('[RecorridoScene] Second barrida finished, cleaning up');
         
+        // 👉 Ocultar el video overlay para desbloquear clicks y cámara
+        UI.hideVideo();
+        console.log('[RecorridoScene] Video overlay hidden - clicks and camera unlocked');
+        
         // � Restaurar z-index del video overlay
         const videoOverlay = document.getElementById('videoOverlay');
         if (videoOverlay) {
@@ -4211,8 +4171,9 @@ export class RecorridoScene extends BaseScene {
             muted: false,
             immersive: false,
             onended: () => {
-              console.log('[RecorridoScene] Transition video ended');
-              // Video de transición terminó, la segunda barrida se encargará del resto
+              console.log('[RecorridoScene] Transition video ended - hiding video overlay');
+              // Ocultar el video cuando termina, la segunda barrida ya está encima
+              UI.hideVideo();
             }
           }).then(transitionVideo => {
             console.log('[RecorridoScene] Transition video element ready:', transitionVideo);
@@ -4279,12 +4240,10 @@ export class RecorridoScene extends BaseScene {
                 // 🛡️ Safety fallback: Monitor second barrida and force cleanup if needed
                 const monitorSecondBarrida = () => {
                   if (!barridaVideo || barridaVideo.paused || barridaVideo.ended) {
-                    console.log('[RecorridoScene] Second barrida ended (via monitoring)');
                     return;
                   }
                   
                   const timeLeft = barridaVideo.duration - barridaVideo.currentTime;
-                  console.log('[RecorridoScene] Second barrida playing - time left:', timeLeft.toFixed(2), 's');
                   
                   if (timeLeft > 0) {
                     requestAnimationFrame(monitorSecondBarrida);
@@ -4298,7 +4257,6 @@ export class RecorridoScene extends BaseScene {
                 const secondPlay = barridaVideo.play();
                 if (secondPlay && typeof secondPlay.then === 'function') {
                   secondPlay.then(() => {
-                    console.log('[RecorridoScene] Second barrida play() succeeded, duration:', barridaVideo.duration);
                     monitorSecondBarrida();
                   }).catch(err => {
                     console.error('[RecorridoScene] Failed to play second barrida:', err);

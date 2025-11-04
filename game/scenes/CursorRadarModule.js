@@ -6,25 +6,25 @@ export class CursorRadarModule {
         scale: 0.15,
         zIndex: 999999, // 👈 Very high z-index to stay above everything
         enabled: true,
-        anim: {
-          dir: '/game-assets/recorrido/interfaz/cursor_animation',
-          prefix: 'D+pre CURSOR_click_',
-          pad: 5,
-          startIndex: 163,
-          maxFramesProbe: 1200
-        }
+        // anim: {
+        //   dir: '/game-assets/recorrido/interfaz/cursor_animation',
+        //   prefix: 'D+pre CURSOR_click_',
+        //   pad: 5,
+        //   startIndex: 163,
+        //   maxFramesProbe: 1200
+        // }
       },
       radar: {
-        enabled: true,
-        zIndex: 1000000, // 👈 Highest z-index for radar effects
+        enabled: false, // Disabled - animations removed
+        zIndex: 1000000,
         scale: 0.22,
-        anim: {
-          dir: '/game-assets/recorrido/interfaz/radar_animation',
-          prefix: 'D+_subacuatico_pre RADAR_V1_',
-          pad: 5,
-          startIndex: 1,
-          maxFramesProbe: 1200
-        }
+        // anim: {
+        //   dir: '/game-assets/recorrido/interfaz/radar_animation',
+        //   prefix: 'D+_subacuatico_pre RADAR_V1_',
+        //   pad: 5,
+        //   startIndex: 1,
+        //   maxFramesProbe: 1200
+        // }
       },
       ...params
     };
@@ -268,6 +268,24 @@ export class CursorRadarModule {
       }
       const im = r.frames[r.idx];
       if (im) r.el.src = im.src;
+    }
+  }
+
+  hideCursor() {
+    if (this.cursorEl) {
+      this.cursorEl.style.display = 'none';
+    }
+    if (this.cursorDot) {
+      this.cursorDot.style.display = 'none';
+    }
+  }
+
+  showCursor() {
+    if (this.cursorEl) {
+      this.cursorEl.style.display = 'block';
+    }
+    if (this.cursorDot) {
+      this.cursorDot.style.display = 'block';
     }
   }
 

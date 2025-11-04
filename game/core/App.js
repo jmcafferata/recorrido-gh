@@ -139,12 +139,17 @@ export class App {
 
 
     async setScene(scene) {
+        console.log(`[App] Setting scene from ${this._currentScene?.name || 'null'} to ${scene?.name || scene?.constructor?.name || 'unknown'}`);
         if (this._currentScene) {
+            console.log(`[App] Unmounting current scene ${this._currentScene.name}`);
             await this._currentScene.unmount?.();
+            console.log(`[App] Unmounted current scene`);
             this._currentScene = null;
         }
         this._currentScene = scene;
+        console.log(`[App] Mounting new scene ${scene?.name || scene?.constructor?.name}`);
         await this._currentScene.mount?.();
+        console.log(`[App] Mounted new scene`);
         this._resize();
         EventBus.emit('scene:changed', { name: scene?.name || scene?.constructor?.name });
     }

@@ -46,7 +46,7 @@ rio: () => new RioScene(app)
 const sceneManager = new SceneManager(app, scenes);
 const router = new Router({
 onRoute: (route) => {
-const name = route.replace(/^#/, '') || 'recorrido';
+const name = route.replace(/^#/, '') || 'menu';
 sceneManager.goTo(name);
 }
 });

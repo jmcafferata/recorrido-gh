@@ -56,6 +56,9 @@ export class InstruccionesTransitionScene extends BaseScene {
       if (this.clickIndicator) {
         this.clickIndicator.style.transform = `translateX(-50%) scale(${this.scale})`;
       }
+      if (this.skipButton) {
+        this.skipButton.style.transform = `scale(${this.scale})`;
+      }
     };
     window.addEventListener('resize', this.resizeHandler);
     
@@ -105,7 +108,9 @@ export class InstruccionesTransitionScene extends BaseScene {
     overlay.style.transition = 'opacity 0.5s';
     overlay.style.opacity = '0';
     await new Promise(resolve => setTimeout(resolve, 500));
-    document.body.removeChild(overlay);
+    if (document.body.contains(overlay)) {
+      document.body.removeChild(overlay);
+    }
     
     // Restaurar cursor
     document.body.style.cursor = 'auto';
@@ -167,6 +172,63 @@ export class InstruccionesTransitionScene extends BaseScene {
     logo.play().catch(() => {});
     requestAnimationFrame(() => {
       logo.style.opacity = '1';
+    });
+
+    // Botón de saltear
+    const skipButton = document.createElement('button');
+    this.skipButton = skipButton;
+    skipButton.textContent = 'SALTEAR';
+    skipButton.style.cssText = `
+      position: absolute;
+      top: 5%;
+      right: 5%;
+      transform: scale(${this.scale});
+      transform-origin: top right;
+      padding: 12px 24px;
+      background: rgba(255, 201, 106, 0.15);
+      border: 2px solid ${EFEDRA_OVERLAY_THEME.colors.text};
+      color: ${EFEDRA_OVERLAY_THEME.colors.text};
+      font-family: ${EFEDRA_OVERLAY_THEME.fonts.family};
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      z-index: 10004;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: auto;
+      text-shadow: 0 0 14px ${EFEDRA_OVERLAY_THEME.colors.textShadow};
+    `;
+    overlay.appendChild(skipButton);
+
+    // Hover effect para el botón
+    skipButton.addEventListener('mouseenter', () => {
+      skipButton.style.background = `rgba(255, 201, 106, 0.35)`;
+      skipButton.style.transform = `scale(${this.scale * 1.05})`;
+    });
+    skipButton.addEventListener('mouseleave', () => {
+      skipButton.style.background = `rgba(255, 201, 106, 0.15)`;
+      skipButton.style.transform = `scale(${this.scale})`;
+    });
+
+    // Variable para controlar si se saltea
+    this.skipRequested = false;
+
+    // Handler para el botón de saltear - ir directo a recorrido
+    skipButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.skipRequested = true;
+      
+      // Limpiar elementos y ir directo al recorrido
+      overlay.style.transition = 'opacity 0.3s';
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+        }
+        document.body.style.cursor = 'auto';
+        location.hash = '#recorrido-transition';
+      }, 300);
     });
 
     // Indicador de click
@@ -231,14 +293,17 @@ export class InstruccionesTransitionScene extends BaseScene {
     `;
     document.head.appendChild(style);
 
-    // Fade in del contenedor
+    // Fade in del contenedor y botón de saltear
     requestAnimationFrame(() => {
       textContainer.style.opacity = '1';
+      this.skipButton.style.opacity = '1';
     });
 
     await new Promise(resolve => setTimeout(resolve, 800));
 
     for (let i = 0; i < lines.length; i++) {
+      // Si se solicitó saltear, salir del loop
+      if (this.skipRequested) break;
       const line = lines[i];
       const lineElement = document.createElement('div');
       // Base font sizes for 1920x1080 (will scale with container)
@@ -296,6 +361,11 @@ export class InstruccionesTransitionScene extends BaseScene {
 
       // Efecto typewriter revelando spans y manteniendo onda
       for (let j = 0; j < spans.length; j++) {
+        // Si se solicitó saltear, salir
+        if (this.skipRequested) {
+          skipTyping = true;
+        }
+
         if (skipTyping) {
           // Revelar todos de golpe
           for (let k = 0; k < spans.length; k++) {
@@ -323,14 +393,21 @@ export class InstruccionesTransitionScene extends BaseScene {
       // Marcar que terminó de escribir
       isTyping = false;
 
+      // Si se solicitó saltear, no esperar
+      if (this.skipRequested) {
+        advanceToNext = true;
+      }
+
       // Pequeña pausa para que el usuario vea el texto completo antes de poder avanzar
-      await new Promise(resolve => setTimeout(resolve, 400));
+      if (!this.skipRequested) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
 
       // Si no se clickeó, esperar click para avanzar
-      if (!advanceToNext) {
+      if (!advanceToNext && !this.skipRequested) {
         await new Promise(resolve => {
           const checkAdvance = setInterval(() => {
-            if (advanceToNext) { clearInterval(checkAdvance); resolve(); }
+            if (advanceToNext || this.skipRequested) { clearInterval(checkAdvance); resolve(); }
           }, 50);
         });
       }
