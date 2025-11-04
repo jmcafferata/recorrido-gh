@@ -48,7 +48,15 @@ goto :eof
     set "backup=%BACKUP_DIR%\!relpath!"
     
     echo Processing: %~nx1...
-    ffmpeg -i "%file%" -c:v libvpx-vp9 -crf %CRF_VP9% -b:v 0 -c:a libopus -b:a 96k -y "%temp%" >nul 2>&1
+    REM Check if video has alpha channel
+    ffmpeg -i "%file%" 2>&1 | findstr /C:"yuva" >nul
+    if %ERRORLEVEL% EQU 0 (
+        REM Video has alpha channel - preserve it with auto-alt-ref=0
+        ffmpeg -i "%file%" -c:v libvpx-vp9 -crf %CRF_VP9% -b:v 0 -pix_fmt yuva420p -auto-alt-ref 0 -c:a libopus -b:a 96k -y "%temp%" >nul 2>&1
+    ) else (
+        REM Standard video without alpha
+        ffmpeg -i "%file%" -c:v libvpx-vp9 -crf %CRF_VP9% -b:v 0 -c:a libopus -b:a 96k -y "%temp%" >nul 2>&1
+    )
     
     if exist "%temp%" (
         for %%A in ("%file%") do set "size1=%%~zA"

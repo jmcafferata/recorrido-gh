@@ -16,7 +16,15 @@ compress_webm() {
     local temp="${file%.webm}.tmp.webm"
     
     echo "Processing: $(basename "$file")..."
-    ffmpeg -i "$file" -c:v libvpx-vp9 -crf $CRF_VP9 -b:v 0 -c:a libopus -b:a 96k -y "$temp" 2>/dev/null
+    
+    # Check if video has alpha channel
+    if ffmpeg -i "$file" 2>&1 | grep -q "yuva"; then
+        # Video has alpha channel - preserve it with auto-alt-ref=0
+        ffmpeg -i "$file" -c:v libvpx-vp9 -crf $CRF_VP9 -b:v 0 -pix_fmt yuva420p -auto-alt-ref 0 -c:a libopus -b:a 96k -y "$temp" 2>/dev/null
+    else
+        # Standard video without alpha
+        ffmpeg -i "$file" -c:v libvpx-vp9 -crf $CRF_VP9 -b:v 0 -c:a libopus -b:a 96k -y "$temp" 2>/dev/null
+    fi
     
     if [ -f "$temp" ]; then
         original_size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
