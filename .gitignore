@@ -13,6 +13,9 @@ dist-unpacked-debug/
 dist-unpacked-debug-2/
 dist-final/
 
+# Backups (original assets before compression)
+backups-originals/
+
 # Logs
 *.log
 npm-debug.log*
