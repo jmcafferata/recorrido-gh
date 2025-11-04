@@ -1,0 +1,65 @@
+# Headers para caché de assets en Render
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Videos - caché largo (1 semana)
+/game-assets/**/*.webm
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.mp4
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.mpeg
+  Cache-Control: public, max-age=604800, immutable
+/assets/**/*.webm
+  Cache-Control: public, max-age=604800, immutable
+/assets/**/*.mp4
+  Cache-Control: public, max-age=604800, immutable
+
+# Audio - caché largo (1 semana)
+/game-assets/**/*.mp3
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.m4a
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.ogg
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.wav
+  Cache-Control: public, max-age=604800, immutable
+
+# Imágenes - caché largo (1 semana)
+/game-assets/**/*.png
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.jpg
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.jpeg
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.webp
+  Cache-Control: public, max-age=604800, immutable
+/assets/**/*.png
+  Cache-Control: public, max-age=604800, immutable
+/assets/**/*.jpg
+  Cache-Control: public, max-age=604800, immutable
+
+# Modelos 3D - caché largo (1 semana)
+/game-assets/**/*.glb
+  Cache-Control: public, max-age=604800, immutable
+/game-assets/**/*.gltf
+  Cache-Control: public, max-age=604800, immutable
+/assets/**/*.glb
+  Cache-Control: public, max-age=604800, immutable
+
+# JSON data - caché medio (1 día)
+/game/data/*.json
+  Cache-Control: public, max-age=86400
+
+# JavaScript y CSS - caché corto para desarrollo (1 hora)
+/*.js
+  Cache-Control: public, max-age=3600
+/*.css
+  Cache-Control: public, max-age=3600
+/game/**/*.js
+  Cache-Control: public, max-age=3600
+/game/**/*.css
+  Cache-Control: public, max-age=3600
+
+# HTML - sin caché (siempre validar)
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate

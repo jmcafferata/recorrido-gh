@@ -157,7 +157,7 @@ export class AssetPreloader {
         // Usar fetch para descargar a caché HTTP del navegador sin mantener en memoria
         const response = await fetch(assetPath, { 
             method: 'GET',
-            cache: 'force-cache' // Forzar uso de caché
+            cache: 'default' // Usar caché si está disponible, sino descargar
         });
         
         if (!response.ok) {
@@ -165,9 +165,12 @@ export class AssetPreloader {
         }
         
         // Consumir el response para completar la descarga, pero no guardarlo
-        await response.blob();
+        const blob = await response.blob();
         
         // El asset ahora está en caché HTTP del navegador
+        // Liberar el blob de memoria inmediatamente
+        URL.revokeObjectURL(URL.createObjectURL(blob));
+        
         return true;
     }
 

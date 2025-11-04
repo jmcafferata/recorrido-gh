@@ -13,9 +13,11 @@ export const AssetLoader = {
   },
   
   audio(url) {
-    // Cargar desde caché HTTP del navegador
+    // Cargar desde caché HTTP del navegador con precarga forzada
     const a = new Audio(url);
     a.preload = 'auto';
+    // Forzar descarga completa
+    a.load();
     return a;
   },
   
@@ -35,7 +37,7 @@ export const AssetLoader = {
   },
   
   video(url) {
-    // Cargar desde caché HTTP del navegador
+    // Cargar desde caché HTTP del navegador con precarga completa
     return new Promise((resolve, reject) => {
       const video = document.createElement('video');
       video.preload = 'auto';
@@ -56,6 +58,8 @@ export const AssetLoader = {
       video.addEventListener('canplaythrough', handleLoad);
       video.addEventListener('error', handleError);
       video.src = url;
+      // Forzar inicio de descarga
+      video.load();
     });
   }
 };
