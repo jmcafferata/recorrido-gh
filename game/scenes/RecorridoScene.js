@@ -224,11 +224,13 @@ export class RecorridoScene extends BaseScene {
 
     // Zoom controls
     this.zoom = {
-      isZooming: false,
-      baseFOV: 75,
-      zoomFOV: 75 * 0.75, // 25% zoom in
       currentFOV: 75,
-      lerpSpeed: 4.0
+      minFOV: 35,        // Maximum zoom in
+      maxFOV: 85,        // Maximum zoom out  
+      baseFOV: 75,       // Default FOV
+      zoomSpeed: 1.2,    // Very slow zoom sensitivity
+      lerpSpeed: 3.5,    // Smooth interpolation speed
+      dampening: 0.75    // Strong dampening for very smooth zooming
     };
 
     // 🎯 Camera debug overlay
@@ -289,9 +291,11 @@ export class RecorridoScene extends BaseScene {
     this._onClick = (e) => this.onClick(e);
     this._onKeyDown = (e) => this.onKeyDown(e);
     this._onKeyUp = (e) => this.onKeyUp(e);
+    this._onWheel = (e) => this.onWheel(e);
     this.app.canvas.addEventListener('mousemove', this._onMouseMove);
     this.app.canvas.addEventListener('mouseleave', this._onLeave);
     this.app.canvas.addEventListener('click', this._onClick);
+    this.app.canvas.addEventListener('wheel', this._onWheel, { passive: false });
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup', this._onKeyUp);
 
@@ -955,6 +959,7 @@ export class RecorridoScene extends BaseScene {
     this.app.canvas.removeEventListener('mousemove', this._onMouseMove);
     this.app.canvas.removeEventListener('mouseleave', this._onLeave);
     this.app.canvas.removeEventListener('click', this._onClick);
+    this.app.canvas.removeEventListener('wheel', this._onWheel);
     window.removeEventListener('keydown', this._onKeyDown);
     window.removeEventListener('keyup', this._onKeyUp);
     
@@ -1906,10 +1911,11 @@ export class RecorridoScene extends BaseScene {
     const videoOverlay = document.getElementById('videoOverlay');
     const isOverlayVisible = videoOverlay && videoOverlay.style.display === 'block';
     
-    if (e.code === 'Space' && !this.zoom.isZooming && !isOverlayVisible) {
-      e.preventDefault();
-      this.zoom.isZooming = true;
-    }
+    // 🔄 REMOVED: Space bar zoom functionality - now using scroll wheel
+    // if (e.code === 'Space' && !this.zoom.isZooming && !isOverlayVisible) {
+    //   e.preventDefault();
+    //   this.zoom.isZooming = true;
+    // }
 
     // 🎮 DEBUG: Atajos de teclado para cambiar de ambiente/ronda
     // Teclas 1-6: Cambiar ambiente dentro de la ronda actual
@@ -1956,10 +1962,32 @@ export class RecorridoScene extends BaseScene {
     const videoOverlay = document.getElementById('videoOverlay');
     const isOverlayVisible = videoOverlay && videoOverlay.style.display === 'block';
     
-    if (e.code === 'Space' && this.zoom.isZooming && !isOverlayVisible) {
-      e.preventDefault();
-      this.zoom.isZooming = false;
-    }
+    // 🔄 REMOVED: Space bar zoom functionality - now using scroll wheel
+    // if (e.code === 'Space' && this.zoom.isZooming && !isOverlayVisible) {
+    //   e.preventDefault();
+    //   this.zoom.isZooming = false;
+    // }
+  }
+
+  onWheel(e) {
+    // 🔍 Scroll wheel zoom functionality
+    const videoOverlay = document.getElementById('videoOverlay');
+    const isOverlayVisible = videoOverlay && videoOverlay.style.display === 'block';
+    
+    // Don't zoom if video overlay is visible
+    if (isOverlayVisible) return;
+    
+    e.preventDefault();
+    
+    // Get wheel delta (normalized) - make it even slower
+    const delta = e.deltaY > 0 ? 1 : -1;
+    
+    // Apply very small zoom change with dampening for smooth, slow zooming
+    const zoomChange = delta * this.zoom.zoomSpeed * 0.8; // Extra dampening multiplier
+    const targetFOV = (this.zoom.targetFOV || this.zoom.currentFOV) + zoomChange;
+    
+    // Clamp to min/max FOV values
+    this.zoom.targetFOV = THREE.MathUtils.clamp(targetFOV, this.zoom.minFOV, this.zoom.maxFOV);
   }
 
   onClick(e) {
@@ -2678,9 +2706,16 @@ export class RecorridoScene extends BaseScene {
   }
 
   updateZoom(dt) {
-    const targetFOV = this.zoom.isZooming ? this.zoom.zoomFOV : this.zoom.baseFOV;
-    this.zoom.currentFOV = THREE.MathUtils.lerp(this.zoom.currentFOV, targetFOV, dt * this.zoom.lerpSpeed);
+    // Initialize targetFOV if not set
+    if (this.zoom.targetFOV === undefined) {
+      this.zoom.targetFOV = this.zoom.baseFOV;
+    }
     
+    // Smoothly interpolate towards target FOV with dampening
+    const lerpFactor = dt * this.zoom.lerpSpeed * this.zoom.dampening;
+    this.zoom.currentFOV = THREE.MathUtils.lerp(this.zoom.currentFOV, this.zoom.targetFOV, lerpFactor);
+    
+    // Update camera FOV if there's a significant change
     if (Math.abs(this.zoom.currentFOV - this.camera.fov) > 0.01) {
       this.camera.fov = this.zoom.currentFOV;
       this.camera.updateProjectionMatrix();
@@ -4039,7 +4074,8 @@ export class RecorridoScene extends BaseScene {
         barridaOverlay._typewriterInterval = typewriterInterval;
         barridaOverlay._textShownTime = performance.now();
         
-        // 📅 Programar desaparición después de 8 segundos (más tiempo para leer)
+        // 📅 Programar desaparición después de 10 segundos (9 segundos para transición 4->5)
+        const textDuration = (this.current === 3 && nextSceneIndex === 4) ? 9000 : 10000;
         setTimeout(() => {
           if (barridaOverlay._textOverlay && !barridaOverlay._textRemoved) {
             barridaOverlay._textRemoved = true;
@@ -4063,7 +4099,7 @@ export class RecorridoScene extends BaseScene {
               }
             }, 300);
           }
-        }, 5000); // Desaparecer después de 8 segundos (más tiempo para leer)
+        }, textDuration); // Desaparecer después de 10 segundos (9 para transición 4->5)
       };
 
       // 📺 Monitorear primera barrida para mostrar texto 2 segundos antes de que termine
@@ -4098,6 +4134,10 @@ export class RecorridoScene extends BaseScene {
       const handleSecondBarridaEnd = async () => {
         console.log('[RecorridoScene] Second barrida finished, cleaning up');
         
+        if (this._stopTransitionSequence) {
+          this._stopTransitionSequence();
+        }
+
         // 👉 Ocultar el video overlay para desbloquear clicks y cámara
         UI.hideVideo();
         console.log('[RecorridoScene] Video overlay hidden - clicks and camera unlocked');
@@ -4175,6 +4215,10 @@ export class RecorridoScene extends BaseScene {
             console.log('[RecorridoScene] Video overlay z-index set to 10000');
           }
           
+          if (this._stopTransitionSequence) {
+            this._stopTransitionSequence();
+          }
+
           UI.showVideo({
             src: transitionVideoSrc,
             controls: false,
@@ -4183,47 +4227,166 @@ export class RecorridoScene extends BaseScene {
             onended: () => {
               console.log('[RecorridoScene] Transition video ended - hiding video overlay');
               // Ocultar el video cuando termina, la segunda barrida ya está encima
+              if (this._stopTransitionSequence) {
+                this._stopTransitionSequence();
+              }
               UI.hideVideo();
             }
-          }).then(transitionVideo => {
+          }).then(async (transitionVideo) => {
             console.log('[RecorridoScene] Transition video element ready:', transitionVideo);
             console.log('[RecorridoScene] Video duration:', transitionVideo.duration);
             console.log('[RecorridoScene] Video display:', window.getComputedStyle(transitionVideo.parentElement).display);
             console.log('[RecorridoScene] Video z-index:', window.getComputedStyle(transitionVideo.parentElement).zIndex);
+
+            const videoOverlayEl = document.getElementById('videoOverlay');
+            if (videoOverlayEl) {
+              // 🎞️ Superponer el video WebM de la secuencia sobre el video de transición
+              const baseW = this.app?.BASE_WIDTH ?? window.innerWidth;
+              const baseH = this.app?.BASE_HEIGHT ?? window.innerHeight;
+              
+              const sequenceOverlay = document.createElement('div');
+              sequenceOverlay.style.cssText = `
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                width: ${baseW}px;
+                height: ${baseH}px;
+                pointer-events: none;
+                z-index: 10001;
+              `;
+
+              const sequenceVideo = document.createElement('video');
+              sequenceVideo.src = '/game-assets/recorrido/interfaz/loading-text-box-animation.webm';
+              sequenceVideo.muted = true;
+              sequenceVideo.loop = false;
+              sequenceVideo.playsInline = true;
+              sequenceVideo.style.cssText = `
+                position: absolute;
+                object-fit: contain;
+                display: block;
+              `;
+
+              sequenceOverlay.appendChild(sequenceVideo);
+              videoOverlayEl.appendChild(sequenceOverlay);
+
+              const targetVideoHeight = 600;
+              const applyVideoLayout = () => {
+                const aspect = sequenceVideo.videoWidth && sequenceVideo.videoHeight
+                  ? sequenceVideo.videoWidth / sequenceVideo.videoHeight
+                  : 1;
+                const targetWidth = Math.round(targetVideoHeight * aspect);
+                const centeredLeft = Math.max(0, Math.round((baseW - targetWidth) / 2));
+                const centeredTop = Math.max(0, Math.round((baseH - targetVideoHeight) / 2));
+
+                sequenceVideo.style.height = `${targetVideoHeight}px`;
+                sequenceVideo.style.width = `${targetWidth}px`;
+                sequenceVideo.style.left = `${centeredLeft}px`;
+                sequenceVideo.style.top = `${centeredTop}px`;
+              };
+
+              if (sequenceVideo.readyState >= 1) {
+                applyVideoLayout();
+              } else {
+                sequenceVideo.addEventListener('loadedmetadata', applyVideoLayout, { once: true });
+              }
+
+              // Reproducir el video overlay y mantener en el último frame al terminar
+              sequenceVideo.addEventListener('ended', () => {
+                // Mantener el último frame visible (ya que loop=false)
+                console.log('[RecorridoScene] Transition overlay video ended, keeping last frame');
+              }, { once: true });
+
+              const playPromise = sequenceVideo.play();
+              if (playPromise) {
+                playPromise.catch(err => {
+                  console.warn('[RecorridoScene] Transition overlay video play failed', err);
+                });
+              }
+
+              const detachOverlay = () => {
+                try {
+                  sequenceVideo.pause();
+                  sequenceVideo.removeAttribute('src');
+                  sequenceVideo.load();
+                } catch {}
+                try {
+                  sequenceOverlay.remove();
+                } catch {}
+              };
+
+              let handleVideoEnded = null;
+              let handleVideoPause = null;
+
+              const cleanupListeners = () => {
+                if (handleVideoEnded) {
+                  transitionVideo.removeEventListener('ended', handleVideoEnded);
+                  handleVideoEnded = null;
+                }
+                if (handleVideoPause) {
+                  transitionVideo.removeEventListener('pause', handleVideoPause);
+                  handleVideoPause = null;
+                }
+              };
+
+              const stopSequence = () => {
+                cleanupListeners();
+                detachOverlay();
+              };
+
+              handleVideoEnded = () => {
+                stopSequence();
+                this._stopTransitionSequence = null;
+              };
+
+              handleVideoPause = () => {
+                if (videoOverlayEl.style.display === 'none') {
+                  stopSequence();
+                  this._stopTransitionSequence = null;
+                }
+              };
+
+              transitionVideo.addEventListener('ended', handleVideoEnded, { once: true });
+              transitionVideo.addEventListener('pause', handleVideoPause);
+
+              this._stopTransitionSequence = () => {
+                stopSequence();
+                this._stopTransitionSequence = null;
+              };
+            }
             
             // 👇 Si es la tercera sección (nextSceneIndex === 3), agregar listener para ir a InstruccionesTransitionScene
-            if (nextSceneIndex === 3) {
-              const handleVideoClick = () => {
-                console.log('[RecorridoScene] Click en video de tercera sección - navegando a InstruccionesTransitionScene');
+            // if (nextSceneIndex === 3) {
+            //   const handleVideoClick = () => {
+            //     console.log('[RecorridoScene] Click en video de tercera sección - navegando a InstruccionesTransitionScene');
                 
-                // Limpiar todo
-                if (this.transitionAudio) {
-                  this.transitionAudio.pause();
-                  this.transitionAudio = null;
-                }
+            //     // Limpiar todo
+            //     if (this.transitionAudio) {
+            //       this.transitionAudio.pause();
+            //       this.transitionAudio = null;
+            //     }
                 
-                // Remover listeners
-                transitionVideo.removeEventListener('click', handleVideoClick);
+            //     // Remover listeners
+            //     transitionVideo.removeEventListener('click', handleVideoClick);
                 
-                // Limpiar overlays
-                try {
-                  barridaOverlay.remove();
-                } catch (e) {
-                  console.error('[RecorridoScene] Failed to remove barrida overlay', e);
-                }
+            //     // Limpiar overlays
+            //     try {
+            //       barridaOverlay.remove();
+            //     } catch (e) {
+            //       console.error('[RecorridoScene] Failed to remove barrida overlay', e);
+            //     }
                 
-                // Ocultar video
-                import('../core/UI.js').then(({ UI }) => {
-                  UI.hideVideo();
-                });
+            //     // Ocultar video
+            //     import('../core/UI.js').then(({ UI }) => {
+            //       UI.hideVideo();
+            //     });
                 
-                // Navegar a InstruccionesTransitionScene
-                this.app.router.goTo('instrucciones-transition');
-              };
+            //     // Navegar a InstruccionesTransitionScene
+            //     this.app.router.goTo('instrucciones-transition');
+            //   };
               
-              transitionVideo.addEventListener('click', handleVideoClick);
-              console.log('[RecorridoScene] Click listener añadido al video de transición (tercera sección)');
-            }
+            //   transitionVideo.addEventListener('click', handleVideoClick);
+            //   console.log('[RecorridoScene] Click listener añadido al video de transición (tercera sección)');
+            // }
             
             // �👉 Precargar la siguiente escena INMEDIATAMENTE (sin pausar transitionAudio)
             console.log('[RecorridoScene] Preloading next stage...');

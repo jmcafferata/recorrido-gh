@@ -204,14 +204,14 @@
       "stage": 6,
       "commonName": "Tortuga de agua",
       "scientificName": "Phrynops hilarii",
-      "id": "tortuga_de_agua",
+      "id": "tortuga",
       "meshNames": {
-        "glitch": "tortuga_de_agua_glitch",
-        "rastro": "tortuga_de_agua_rastro"
+        "glitch": "tortuga_glitch",
+        "rastro": "tortuga_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/tortuga_de_agua/tortuga_de_agua_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/tortuga_de_agua/tortuga_de_agua_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/tortuga_de_agua/tortuga_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/tortuga_de_agua/tortuga_data.webm"
       },
       "text": "<p>La <strong>tortuga sudamericana de arroyo</strong>, <strong>tortuga de laguna</strong> o <strong>tortuga campanita</strong> (<em>Phrynops hilarii</em>) es una especie de tortuga acuática de la familia <strong>Chelidae</strong>, nativa del <strong>noreste de Argentina, sur de Brasil, Paraguay y Uruguay</strong>.</p><p><em>Phrynops hilarii</em> llega a alcanzar una talla de <strong>hasta 40 cm</strong>. El caparazón se halla <strong>comprimido en su parte dorsal y ventral</strong>. Las extremidades están achatadas hacia atrás, además tienen <strong>membranas entre los dedos que al extenderse facilitan la natación</strong>.</p>",
       "glitchVideoSpeed": 0.25,
@@ -222,14 +222,14 @@
       "stage": 1,
       "commonName": "Cardenal Amarillo",
       "scientificName": "Gubernatrix cristata",
-      "id": "cardenal_amarillo",
+      "id": "cardenal",
       "meshNames": {
-        "glitch": "cardenal_amarillo_glitch",
-        "rastro": "cardenal_amarillo_rastro"
+        "glitch": "cardenal_glitch",
+        "rastro": "cardenal_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/cardenal_amarillo/cardenal_amarillo_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/cardenal_amarillo/cardenal_amarillo_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/cardenal/cardenal_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/cardenal/cardenal_data.webm"
       },
       "text": "<p>Ave muy vistosa de unos 20 cm, con <strong>pico y patas negras</strong>. El macho se distingue por su <strong>copete y garganta negros</strong> y su <strong>pecho y rostro amarillos</strong>. Vive en <strong>parejas o pequeños grupos familiares</strong>, y fuera de la época reproductiva puede formar <strong>bandadas numerosas</strong>.</p><p>Se alimenta principalmente de <strong>insectos en el suelo</strong>, a veces junto al cardenal rojo y otras especies.</p><p>El <strong>cardenal amarillo</strong> es <strong>Monumento Natural Provincial en Entre Ríos</strong>, pero su población ha <strong>disminuido drásticamente</strong>. Hoy es una especie <strong>rara y amenazada de extinción</strong>, afectada por la <strong>captura ilegal</strong> y la <strong>pérdida de su hábitat</strong>.</p>",
       "glitchVideoSpeed": 0.25,
@@ -258,14 +258,14 @@
       "stage": 3,
       "commonName": "Paloma Torcaza",
       "scientificName": "Zenadia auriculata",
-      "id": "paloma_torcaza",
+      "id": "paloma",
       "meshNames": {
-        "glitch": "paloma_torcaza_glitch",
-        "rastro": "paloma_torcaza_rastro"
+        "glitch": "paloma_glitch",
+        "rastro": "paloma_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/paloma_torcaza/paloma_torcaza_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/paloma_torcaza/paloma_torcaza_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/paloma/paloma_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/paloma/paloma_data.webm"
       },
       "text": "<p>Ave <strong>nativa de Sudamérica</strong>, conocida también como <strong>tórtola o torcaza común</strong>. Habita en <strong>zonas abiertas, arboledas y áreas urbanas</strong>.</p><p>Mide entre <strong>22 y 28 cm</strong> y pesa alrededor de <strong>117 g</strong>. Presenta <strong>plumaje pardo</strong>, con <strong>manchas negras en las alas</strong> y una <strong>mancha azul auricular</strong> característica.</p><p>Es <strong>granívora</strong>, alimentándose de <strong>semillas y granos agrícolas</strong> (maíz, trigo, arroz, soja), aunque también consume <strong>insectos y grava</strong> para facilitar la digestión.</p><p>Se reproduce <strong>todo el año</strong> en nidos sencillos como <strong>plataformas de palitos, arbustos o en el suelo</strong>, pone <strong>dos huevos</strong> y los <strong>pichones vuelan a los 14 días</strong>.</p>",
       "glitchVideoSpeed": 0.25,
@@ -312,14 +312,14 @@
       "stage": 6,
       "commonName": "Martín pescador",
       "scientificName": "Megaceryle torquata",
-      "id": "martin_pescador",
+      "id": "martin",
       "meshNames": {
-        "glitch": "martin_pescador_glitch",
-        "rastro": "martin_pescador_rastro"
+        "glitch": "martin_glitch",
+        "rastro": "martin_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/martin_pescador/martin_pescador_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/martin_pescador/martin_pescador_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/martin/martin_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/martin/martin_data.webm"
       },
       "text": "<p>Ave <strong>coraciforme de la familia Cerylidae</strong>, <strong>normalmente muy colorida</strong>, distribuida desde el <strong>sur de Texas hasta Tierra del Fuego</strong>.</p><p>Vive a <strong>orillas de arroyos</strong>, ríos, lagos, <strong>lagunas, esteros, bañados</strong>, en zonas suburbanas y urbanas. Cuando la calidad del agua no le permite capturar peces, se alimenta de <strong>insectos, reptiles o mamíferos</strong>. Tiene la <strong>costumbre de golpear la presa contra la superficie donde se posa</strong>.</p>",
       "glitchVideoSpeed": 0.25,
@@ -402,14 +402,14 @@
       "stage": 5,
       "commonName": "Rana verde",
       "scientificName": "Boana pulchelas",
-      "id": "rana_verde",
+      "id": "rana",
       "meshNames": {
-        "glitch": "rana_verde_glitch",
-        "rastro": "rana_verde_rastro"
+        "glitch": "rana_glitch",
+        "rastro": "rana_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/rana_verde/rana_verde_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/rana_verde/rana_verde_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/rana/rana_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/rana/rana_data.webm"
       },
       "text": "<p>Habita en <strong>praderas bajas, pastizales inundables, lagos y marismas intermitentes de agua dulce</strong>. Es una especie abundante. Su visualización es difícil por su <strong>pequeño tamaño</strong>: machos: <strong>35-45 mm</strong>, hembras: <strong>más de 50 mm</strong>) y su capacidad de <strong>mimetización</strong>. Puede cambiar de color <strong>rápidamente</strong>, variando entre <strong>verde brillante, canela y sin manchas marrones</strong>.</p><p>Según la temporada (de septiembre a noviembre), los <strong>machos</strong> pasan de <strong>marrón castaño a amarillo brillante</strong>, y las <strong>hembras</strong>, de <strong>marrón grisáceo a verde manzana</strong>, manteniendo <strong>manchas negras laterales</strong>.</p>",
       "glitchVideoSpeed": 0.25,
@@ -438,14 +438,14 @@
       "stage": 1,
       "commonName": "Banderita argentina",
       "scientificName": "Morpho epistrophus argentinus",
-      "id": "banderita_argentina",
+      "id": "banderita",
       "meshNames": {
-        "glitch": "banderita_argentina_glitch",
-        "rastro": "banderita_argentina_rastro"
+        "glitch": "banderita_glitch",
+        "rastro": "banderita_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/banderita_argentina/banderita_argentina_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/banderita_argentina/banderita_argentina_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/banderita/banderita_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/banderita/banderita_data.webm"
       },
       "text": "<p>La mariposa <strong>banderita argentina</strong> llama la atención por el <strong>brillo azul celeste metálico</strong> de sus alas, evocando los colores patrios. Su <strong>oruga es de color rojizo con pelos largos</strong> y se alimenta principalmente de hojas de <strong>timbó y otras leguminosas nativas</strong>. Habita en <strong>selvas en galería y montes ribereños</strong> del noreste argentino, incluyendo los márgenes del río Paraná.</p><p>Cuando descansa, muestra el reverso <strong>marrón con ocelos</strong>, que la camuflan entre las ramas. Es un <strong>símbolo de la biodiversidad entrerriana</strong> y de los ambientes ribereños del Litoral.</p>",
       "glitchVideoSpeed": 0.25,
@@ -456,14 +456,14 @@
       "stage": 2,
       "commonName": "Yesquero multicolor",
       "scientificName": "Trametes versicolor",
-      "id": "yesquero_multicolor",
+      "id": "yesquero",
       "meshNames": {
-        "glitch": "yesquero_multicolor_glitch",
-        "rastro": "yesquero_multicolor_rastro"
+        "glitch": "yesquero_glitch",
+        "rastro": "yesquero_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/yesquero_multicolor/yesquero_multicolor_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/yesquero_multicolor/yesquero_multicolor_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/yesquero/yesquero_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/yesquero/yesquero_data.webm"
       },
       "text": "<p>El <strong>yesquero multicolor</strong>, también llamado <strong>cola de pavo</strong>, es un <strong>hongo saprobio</strong> que crece sobre <strong>troncos y ramas en descomposición</strong>, ayudando a limpiar el ambiente al descomponer la madera muerta. Su forma en <strong>abanico</strong> y <strong>sus franjas multicolores</strong> —amarillos, naranjas, marrones y grises— lo hacen fácilmente reconocible. En el <strong>Bajo Delta del Paraná</strong>, en suelos arcillosos, álamos y bosques secundarios. Su tejido es <strong>dura y flexible, similar al cuero</strong>, y carece de pie. Se reproduce durante todo el año y forma <strong>grupos imbricados</strong> como tejas por eso se los conoce como hongos repisa. No son comestibles. En Asia, se lo valora por sus <strong>propiedades medicinales</strong> empleadas en terapias tradicionales.</p>",
       "glitchVideoSpeed": 0.25,
@@ -474,14 +474,14 @@
       "stage": 3,
       "commonName": "Culebra verde",
       "scientificName": "Philodyras aestiva",
-      "id": "culebra_verde",
+      "id": "culebra",
       "meshNames": {
-        "glitch": "culebra_verde_glitch",
-        "rastro": "culebra_verde_rastro"
+        "glitch": "culebra_glitch",
+        "rastro": "culebra_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/culebra_verde/culebra_verde_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/culebra_verde/culebra_verde_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/culebra/culebra_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/culebra/culebra_data.webm"
       },
       "text": "<p><em>Philodryas aestiva</em> es una especie de serpiente de la familia <strong>Colubridae</strong>. Se la conoce comúnmente como <strong>culebra verde</strong>.</p><p>Serpiente de la familia <strong>Colubridae</strong>, conocida como <strong>culebra verde</strong>.</p><p>El nombre <em>Philodryas</em> proviene del griego y significa <strong>\"amante de los árboles\"</strong>, mientras que <em>aestiva</em> deriva del latín <strong>\"estival\"</strong> o <strong>\"del verano\"</strong>, aludiendo a su hábitat y época de actividad.</p><p>Es una especie <strong>ágil y esbelta</strong>, de <strong>grandes ojos</strong>, <strong>diurna</strong> y <strong>tanto terrestre como arborícola</strong>. Regula su temperatura buscando <strong>sitios frescos en verano y cálidos en invierno</strong>.</p><p>Se alimenta principalmente de <strong>anuros y pequeños mamíferos</strong>, aunque también consume <strong>insectos y otros vertebrados pequeños</strong>.</p>",
       "glitchVideoSpeed": 0.25,
@@ -492,14 +492,14 @@
       "stage": 4,
       "commonName": "Aguará Guazú",
       "scientificName": "Chrysocyon brachyurus",
-      "id": "aguara_guazu",
+      "id": "aguara",
       "meshNames": {
-        "glitch": "aguara_guazu_glitch",
-        "rastro": "aguara_guazu_rastro"
+        "glitch": "aguara_glitch",
+        "rastro": "aguara_rastro"
       },
       "assets": {
-        "glitchVideo": "/game-assets/recorrido/criaturas/aguara_guazu/aguara_guazu_glitch.webm",
-        "dataVideo": "/game-assets/recorrido/criaturas/aguara_guazu/aguara_guazu_data.webm"
+        "glitchVideo": "/game-assets/recorrido/criaturas/aguara/aguara_glitch.webm",
+        "dataVideo": "/game-assets/recorrido/criaturas/aguara/aguara_data.webm"
       },
       "text": "<p>También llamado <strong>lobo de crin o zorro grande</strong>, es un mamífero carnívoro autóctono de Sudamérica, presente en Argentina, Brasil, Paraguay, Uruguay y Bolivia.</p><p>Es el <strong>mayor cánido sudamericano</strong> y la <strong>única especie del género <em>Chrysocyon</em></strong>, que significa <strong>\"perro de oro\"</strong>.</p><p>Mide hasta <strong>110 cm de altura</strong> y <strong>145 cm de largo</strong>, con pelaje <strong>rojizo anaranjado, crin negra, hocico y patas negras</strong>, y abdomen <strong>blanco</strong>. Sus <strong>patas largas</strong> le permiten desplazarse entre pastizales.</p><p>Es <strong>solitario y nocturno</strong>, de dieta <strong>omnívora</strong>, que incluye <strong>roedores, aves, insectos y frutos silvestres</strong>.</p><p>La gestación dura <strong>62 a 66 días</strong> y suele tener <strong>2 crías</strong> por camada.</p><p>El aguará guazú está declarado <strong>vulnerable</strong> por la UICN y protegido por <strong>leyes nacionales</strong> y provinciales.</p>",
       "glitchVideoSpeed": 0.25,

@@ -123,9 +123,9 @@ export class InstruccionesTransitionScene extends BaseScene {
     const lines = [
       'Tu rol',
       'Sos aprendiz de guardaparques.',
-      'Tu misión es explorar un ecosistema del Delta del Paraná y descubrir su biodiversidad.',
-      'Tu herramienta principal: la curiosidad y la capacidad de observación.',
-      'Agudizá los sentidos, la naturaleza se muestra a quien sabe observar.',
+      'Tu misión es explorar un ecosistema del Delta del Paraná\ny descubrir su biodiversidad.',
+      'Tu herramienta principal: la curiosidad\ny la capacidad de observación.',
+      'Agudizá los sentidos,\nla naturaleza se muestra a quien sabe observar.',
       'Usá tu silencio: la naturaleza habla bajito.'
     ];
 
@@ -301,10 +301,27 @@ export class InstruccionesTransitionScene extends BaseScene {
 
     await new Promise(resolve => setTimeout(resolve, 800));
 
+    // Crear contenedor fijo para el texto actual
+    const currentLineContainer = document.createElement('div');
+    currentLineContainer.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 1200px;
+    `;
+    textContainer.appendChild(currentLineContainer);
+
     for (let i = 0; i < lines.length; i++) {
       // Si se solicitó saltear, salir del loop
       if (this.skipRequested) break;
       const line = lines[i];
+      
+      // Limpiar el contenedor antes de agregar nueva línea
+      currentLineContainer.innerHTML = '';
+      currentLineContainer.style.opacity = '1'; // Resetear opacidad para la nueva línea
+      
       const lineElement = document.createElement('div');
       // Base font sizes for 1920x1080 (will scale with container)
       const baseFontSize = i === 0 ? 48 : 27;
@@ -316,32 +333,38 @@ export class InstruccionesTransitionScene extends BaseScene {
         margin: ${i === 0 ? '0 0 1.5em 0' : '0.5em 0'};
         text-align: center;
         line-height: 1.6;
-        text-shadow: 0 0 18px ${EFEDRA_OVERLAY_THEME.colors.textShadow};
-        opacity: 0;
         animation: fadeWaveIn 0.6s ease-out forwards;
       `;
-      textContainer.appendChild(lineElement);
+      currentLineContainer.appendChild(lineElement);
 
       // Construir spans por carácter para animación de ondas
       const spans = [];
-      for (let c = 0; c < line.length; c++) {
-        const ch = line[c] === ' ' ? '\u00A0' : line[c];
-        const s = document.createElement('span');
-        s.textContent = ch;
-        s.style.display = 'inline-block';
-        s.style.opacity = '0';
-        s.style.transform = 'translateY(10px)';
-        s.style.filter = 'blur(3px)';
-        s.style.transition = 'opacity 220ms ease-out, transform 360ms ease-out, filter 480ms ease-out';
-        s.style.willChange = 'transform, opacity, filter';
-        // Animación continua de onda una vez revelado
-        s.style.setProperty('--waveAmp', i === 0 ? '8px' : '5px');
-        s.style.animation = `charWave ${i === 0 ? 2600 : 2800}ms ease-in-out ${c * 60}ms infinite`;
-        lineElement.appendChild(s);
-        spans.push(s);
+      const parts = line.split(/(\n)/); // Separa por \n pero mantiene el delimitador
+
+      for (const part of parts) {
+        if (part === '\n') {
+          lineElement.appendChild(document.createElement('br'));
+        } else {
+          for (let c = 0; c < part.length; c++) {
+            const ch = part[c] === ' ' ? '\u00A0' : part[c];
+            const s = document.createElement('span');
+            s.textContent = ch;
+            s.style.display = 'inline-block';
+            s.style.opacity = '0';
+            s.style.transform = 'translateY(10px)';
+            s.style.filter = 'blur(3px)';
+            s.style.transition = 'opacity 220ms ease-out, transform 360ms ease-out, filter 480ms ease-out';
+            s.style.willChange = 'transform, opacity, filter';
+            // Animación continua de onda una vez revelado
+            s.style.setProperty('--waveAmp', i === 0 ? '8px' : '5px');
+            s.style.animation = `charWave ${i === 0 ? 2600 : 2800}ms ease-in-out ${c * 60}ms infinite`;
+            lineElement.appendChild(s);
+            spans.push(s);
+          }
+        }
       }
 
-      // Variables de control para el typewriter + whoosh en click
+      // Variables de control para el typewriter
       let isTyping = true;
       let skipTyping = false;
       let advanceToNext = false;
@@ -352,9 +375,9 @@ export class InstruccionesTransitionScene extends BaseScene {
       // Configurar click handler: completa el texto si está escribiendo, o avanza si ya terminó
       const clickHandler = () => {
         if (isTyping) {
-          skipTyping = true; // completar inmediatamente
+          skipTyping = true; // completar inmediatamente toda la frase
         } else {
-          advanceToNext = true; // avanzar a la siguiente línea
+          advanceToNext = true; // pasar a la siguiente línea inmediatamente
         }
       };
       overlay.addEventListener('click', clickHandler);
@@ -415,22 +438,14 @@ export class InstruccionesTransitionScene extends BaseScene {
       // Remover event listener
       overlay.removeEventListener('click', clickHandler);
 
-      // Animar salida de la línea actual (excepto la última)
+      // Transición a la siguiente línea (excepto la última)
       if (i < lines.length - 1) {
         clickIndicator.style.opacity = '0';
-
-        // Whoosh: toda la frase se va junta, de una
-        for (let j = 0; j < spans.length; j++) {
-          const el = spans[j];
-          el.style.animation = 'none'; // pausar onda
-          el.style.transition = 'transform 450ms cubic-bezier(0.17, 0.84, 0.44, 1), opacity 350ms ease, filter 350ms ease';
-          el.style.transitionDelay = '0ms'; // todo junto, sin stagger
-          el.style.transform = 'translate(18px, -64px) scale(1.03)';
-          el.style.opacity = '0';
-          el.style.filter = 'blur(3px)';
-        }
-        await new Promise(resolve => setTimeout(resolve, 480));
-        lineElement.style.opacity = '0';
+        
+        // Simplemente hacer fade out sin animación de movimiento
+        currentLineContainer.style.transition = 'opacity 0.3s ease';
+        currentLineContainer.style.opacity = '0';
+        await new Promise(resolve => setTimeout(resolve, 300));
       } else {
         // Última línea - pausa automática
         await new Promise(resolve => setTimeout(resolve, 1500));
