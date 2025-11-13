@@ -32,8 +32,18 @@ const mimeTypes = {
 const server = http.createServer((req, res) => {
   const safeRoot = process.cwd();
 
-  // Normalize the path to prevent directory traversal
+  // Decode and normalize the path to prevent directory traversal
   let rawPath = req.url.split('?')[0];
+  
+  // Decode URL-encoded characters (e.g., %20 -> space)
+  try {
+    rawPath = decodeURIComponent(rawPath);
+  } catch (e) {
+    res.writeHead(400, { 'Content-Type': 'text/html' });
+    res.end('<h1>400 - Bad Request</h1>', 'utf-8');
+    return;
+  }
+  
   if (rawPath === '/' || rawPath === '') {
     rawPath = '/index.html';
   }
