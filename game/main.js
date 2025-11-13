@@ -208,26 +208,28 @@ showPauseMenu();
 
 
 // Initialize preloader and asset loading
+let globalAssetPreloader = null;
+
 async function initializeApp() {
-  console.log('🚀 Iniciando precarga de assets a caché...');
+  console.log('🚀 Iniciando precarga de assets a RAM...');
   
   // Crear y mostrar preloader
   const preloaderUI = new PreloaderUI();
-  const assetPreloader = new AssetPreloader();
+  globalAssetPreloader = new AssetPreloader();
   
-  const allAssets = assetPreloader.getAllAssets();
+  const allAssets = globalAssetPreloader.getAllAssets();
   preloaderUI.setTotalAssets(allAssets.length);
   
-  console.log(`📦 Precacheando ${allAssets.length} assets (solo a caché HTTP)...`);
+  console.log(`📦 Precargando ${allAssets.length} assets a memoria RAM...`);
   
   try {
-    // Precargar todos los assets SOLO a caché del navegador
-    await assetPreloader.preloadAll((loadedCount, currentFile) => {
+    // Precargar todos los assets a RAM
+    await globalAssetPreloader.preloadAll((loadedCount, currentFile) => {
       preloaderUI.updateProgress(loadedCount, currentFile);
-      console.log(`📁 Cacheado: ${currentFile} (${loadedCount}/${allAssets.length})`);
+      console.log(`📁 Cargado a RAM: ${currentFile} (${loadedCount}/${allAssets.length})`);
     });
     
-    console.log('✅ Assets cacheados exitosamente (sin usar RAM)');
+    console.log('✅ Assets cargados en memoria RAM exitosamente');
     
     // Esperar un momento para mostrar "100%" antes de ocultar
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -235,13 +237,18 @@ async function initializeApp() {
     // Ocultar preloader
     await preloaderUI.hide();
     
-    console.log('🎮 Aplicación lista - assets en caché HTTP del navegador');
+    console.log('🎮 Aplicación lista - todos los assets en RAM');
     
   } catch (error) {
     console.error('❌ Error durante la precarga:', error);
     await preloaderUI.hide();
   }
 }
+
+// Exponer globalmente para que las escenas puedan acceder
+window.getAssetFromMemory = (path) => {
+  return globalAssetPreloader?.getAssetFromMemory(path);
+};
 
 // Initialize everything
 async function startApp() {

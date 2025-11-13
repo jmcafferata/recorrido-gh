@@ -108,6 +108,9 @@ export class AssetPreloader {
 
         // Solo guardamos URLs precargadas, no los assets en memoria
         this.precachedUrls = new Set();
+        
+        // Almacenar assets en memoria RAM
+        this.assetsInMemory = new Map();
     }
 
     getAllAssets() {
@@ -149,29 +152,51 @@ export class AssetPreloader {
         });
 
         await Promise.allSettled(loadPromises);
-        console.log(`✅ ${this.precachedUrls.size} assets precached successfully`);
+        
+        const memoryUsageMB = (this.getTotalMemoryUsage() / 1024 / 1024).toFixed(2);
+        console.log(`✅ ${this.precachedUrls.size} assets en RAM (${memoryUsageMB} MB total)`);
+        
         return this.precachedUrls;
     }
 
     async precacheAsset(assetPath) {
-        // Usar fetch para descargar a caché HTTP del navegador sin mantener en memoria
+        // Descargar y mantener en memoria RAM
         const response = await fetch(assetPath, { 
             method: 'GET',
-            cache: 'default' // Usar caché si está disponible, sino descargar
+            cache: 'force-cache' // Usar caché si está disponible
         });
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        // Consumir el response para completar la descarga, pero no guardarlo
+        // Mantener el blob en memoria RAM
         const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
         
-        // El asset ahora está en caché HTTP del navegador
-        // Liberar el blob de memoria inmediatamente
-        URL.revokeObjectURL(URL.createObjectURL(blob));
+        // Guardar en memoria para acceso rápido
+        this.assetsInMemory.set(assetPath, {
+            blob: blob,
+            url: objectUrl,
+            type: blob.type,
+            size: blob.size
+        });
+        
+        console.log(`💾 Asset en RAM: ${assetPath} (${(blob.size / 1024 / 1024).toFixed(2)} MB)`);
         
         return true;
+    }
+    
+    getAssetFromMemory(assetPath) {
+        return this.assetsInMemory.get(assetPath);
+    }
+    
+    getTotalMemoryUsage() {
+        let totalBytes = 0;
+        for (const asset of this.assetsInMemory.values()) {
+            totalBytes += asset.size;
+        }
+        return totalBytes;
     }
 
     isPrecached(assetPath) {
@@ -179,6 +204,14 @@ export class AssetPreloader {
     }
 
     clearCache() {
+        // Liberar object URLs antes de limpiar
+        for (const asset of this.assetsInMemory.values()) {
+            URL.revokeObjectURL(asset.url);
+        }
+        
+        this.assetsInMemory.clear();
         this.precachedUrls.clear();
+        
+        console.log('🗑️ Memoria RAM liberada');
     }
 }
