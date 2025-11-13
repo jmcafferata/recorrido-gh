@@ -2,56 +2,11 @@
   "name": "recorrido",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "server.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder -mwl",
-    "build:win": "electron-builder --win",
-    "build:win:portable": "electron-builder --win portable",
-    "build:win:dir": "electron-builder --win dir",
-    "build:mac": "electron-builder --mac"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "electron": "^39.0.0",
-    "electron-builder": "^26.0.12"
-  },
-  "build": {
-    "appId": "com.recorrido.app",
-    "productName": "Recorrido",
-    "files": [
-      "**/*",
-      "!dist/**",
-      "!dist-new/**",
-      "!packaged/**",
-      "!portable-dist/**",
-      "!portable-dist-unsigned/**",
-      "!portable-dist-dir/**",
-      "!dist-unpacked-unsigned/**",
-      "!dist-unpacked-debug/**",
-      "!dist-unpacked-debug-2/**",
-      "!dist-final/**",
-      "!**/*.map"
-    ],
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "category": "public.app-category.games"
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "directories": {
-      "buildResources": "build",
-      "output": "dist-final"
-    }
-  },
-  "dependencies": {
-    "three": "^0.181.0"
-  }
+  "license": "ISC"
 }
